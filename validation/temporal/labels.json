@@ -1,0 +1,532 @@
+{
+  "frames_per_second": 8,
+  "event_tolerance_ticks": 1,
+  "iou_threshold": 0.5,
+  "fixtures": [
+    {
+      "clip": "jitsi-share-launch.mp4",
+      "source": {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/f/fc/Abstract_Wikipedia_Volunteer_Corner_2023-09.webm",
+        "sha256": "4e3ffefc9e733d9aa677c9c31b45a5eb175081dc7226eeec769374f65bffaef8",
+        "start_seconds": 114
+      },
+      "size": [
+        2000,
+        1200
+      ],
+      "scan_ticks": [
+        6,
+        36
+      ],
+      "layouts": {
+        "gallery": {
+          "denny": [
+            644,
+            16,
+            330,
+            400
+          ],
+          "nick": [
+            982,
+            16,
+            330,
+            400
+          ],
+          "richard": [
+            1320,
+            16,
+            330,
+            400
+          ],
+          "david": [
+            1658,
+            16,
+            330,
+            400
+          ],
+          "egbe": [
+            644,
+            424,
+            330,
+            400
+          ],
+          "james": [
+            982,
+            424,
+            330,
+            400
+          ],
+          "luca": [
+            1320,
+            424,
+            330,
+            400
+          ],
+          "mahuton": [
+            1658,
+            424,
+            330,
+            400
+          ],
+          "nicolas": [
+            644,
+            832,
+            668,
+            362
+          ],
+          "terasail": [
+            1320,
+            832,
+            668,
+            362
+          ]
+        },
+        "gallery_and_share": {
+          "denny": [
+            644,
+            16,
+            330,
+            400
+          ],
+          "nick": [
+            1320,
+            16,
+            330,
+            400
+          ],
+          "richard": [
+            1658,
+            16,
+            330,
+            400
+          ],
+          "david": [
+            644,
+            424,
+            330,
+            400
+          ],
+          "egbe": [
+            982,
+            424,
+            330,
+            400
+          ],
+          "james": [
+            1320,
+            424,
+            330,
+            400
+          ],
+          "luca": [
+            1658,
+            424,
+            330,
+            400
+          ],
+          "mahuton": [
+            644,
+            832,
+            442,
+            362
+          ],
+          "nicolas": [
+            1095,
+            832,
+            442,
+            362
+          ],
+          "terasail": [
+            1546,
+            832,
+            442,
+            362
+          ]
+        }
+      },
+      "anchors": {
+        "6": "gallery",
+        "8": "gallery",
+        "9": "gallery_and_share",
+        "10": "gallery_and_share",
+        "11": "gallery_and_share",
+        "12": "gallery_and_share",
+        "20": "gallery_and_share",
+        "24": "gallery_and_share",
+        "36": "gallery_and_share"
+      },
+      "camera_states": {
+        "default": {
+          "denny": "video",
+          "nick": "camera_off",
+          "richard": "video",
+          "david": "video",
+          "egbe": "camera_off",
+          "james": "video",
+          "luca": "camera_off",
+          "mahuton": "camera_off",
+          "nicolas": "camera_off",
+          "terasail": "camera_off"
+        },
+        "9": {
+          "james": "camera_off"
+        },
+        "10": {
+          "james": "camera_off"
+        }
+      },
+      "cases": [
+        {
+          "name": "jitsi-dense",
+          "drop_ticks": [],
+          "negative_windows": [
+            [
+              12,
+              36
+            ]
+          ],
+          "events": [
+            {
+              "id": "nick",
+              "kind": "move",
+              "tick": 9,
+              "anchors": [
+                8,
+                9
+              ]
+            },
+            {
+              "id": "richard",
+              "kind": "move",
+              "tick": 9,
+              "anchors": [
+                8,
+                9
+              ]
+            },
+            {
+              "id": "david",
+              "kind": "move",
+              "tick": 9,
+              "anchors": [
+                8,
+                9
+              ]
+            },
+            {
+              "id": "egbe",
+              "kind": "move",
+              "tick": 9,
+              "anchors": [
+                8,
+                9
+              ]
+            },
+            {
+              "id": "james",
+              "kind": "move",
+              "tick": 9,
+              "anchors": [
+                8,
+                9
+              ]
+            },
+            {
+              "id": "luca",
+              "kind": "move",
+              "tick": 9,
+              "anchors": [
+                8,
+                9
+              ]
+            },
+            {
+              "id": "mahuton",
+              "kind": "move",
+              "tick": 9,
+              "anchors": [
+                8,
+                9
+              ]
+            },
+            {
+              "id": "nicolas",
+              "kind": "move",
+              "tick": 9,
+              "anchors": [
+                8,
+                9
+              ]
+            },
+            {
+              "id": "terasail",
+              "kind": "move",
+              "tick": 9,
+              "anchors": [
+                8,
+                9
+              ]
+            },
+            {
+              "id": "mahuton",
+              "kind": "resize",
+              "tick": 9,
+              "anchors": [
+                8,
+                9
+              ]
+            },
+            {
+              "id": "nicolas",
+              "kind": "resize",
+              "tick": 9,
+              "anchors": [
+                8,
+                9
+              ]
+            },
+            {
+              "id": "terasail",
+              "kind": "resize",
+              "tick": 9,
+              "anchors": [
+                8,
+                9
+              ]
+            },
+            {
+              "id": "james",
+              "kind": "camera_state",
+              "tick": 9,
+              "anchors": [
+                8,
+                9
+              ]
+            },
+            {
+              "id": "james",
+              "kind": "camera_state",
+              "tick": 11,
+              "anchors": [
+                10,
+                11
+              ]
+            }
+          ]
+        },
+        {
+          "name": "jitsi-sparse",
+          "drop_ticks": [
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ],
+          "negative_windows": [
+            [
+              21,
+              36
+            ]
+          ],
+          "events": [
+            {
+              "id": "nick",
+              "kind": "move",
+              "tick": 20,
+              "anchors": [
+                8,
+                20
+              ],
+              "uncertain": true
+            },
+            {
+              "id": "richard",
+              "kind": "move",
+              "tick": 20,
+              "anchors": [
+                8,
+                20
+              ],
+              "uncertain": true
+            },
+            {
+              "id": "david",
+              "kind": "move",
+              "tick": 20,
+              "anchors": [
+                8,
+                20
+              ],
+              "uncertain": true
+            },
+            {
+              "id": "egbe",
+              "kind": "move",
+              "tick": 20,
+              "anchors": [
+                8,
+                20
+              ],
+              "uncertain": true
+            },
+            {
+              "id": "james",
+              "kind": "move",
+              "tick": 20,
+              "anchors": [
+                8,
+                20
+              ],
+              "uncertain": true
+            },
+            {
+              "id": "luca",
+              "kind": "move",
+              "tick": 20,
+              "anchors": [
+                8,
+                20
+              ],
+              "uncertain": true
+            },
+            {
+              "id": "mahuton",
+              "kind": "move",
+              "tick": 20,
+              "anchors": [
+                8,
+                20
+              ],
+              "uncertain": true
+            },
+            {
+              "id": "nicolas",
+              "kind": "move",
+              "tick": 20,
+              "anchors": [
+                8,
+                20
+              ],
+              "uncertain": true
+            },
+            {
+              "id": "terasail",
+              "kind": "move",
+              "tick": 20,
+              "anchors": [
+                8,
+                20
+              ],
+              "uncertain": true
+            },
+            {
+              "id": "mahuton",
+              "kind": "resize",
+              "tick": 20,
+              "anchors": [
+                8,
+                20
+              ],
+              "uncertain": true
+            },
+            {
+              "id": "nicolas",
+              "kind": "resize",
+              "tick": 20,
+              "anchors": [
+                8,
+                20
+              ],
+              "uncertain": true
+            },
+            {
+              "id": "terasail",
+              "kind": "resize",
+              "tick": 20,
+              "anchors": [
+                8,
+                20
+              ],
+              "uncertain": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "clip": "zoom-slide.mp4",
+      "source": {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/2/24/RU-07112021-WMCEEOM-Track1-LocalRecording-5.webmhd.webm",
+        "sha256": "a341f433888c6d2e33054ffda81f21f365cd55f97a8543c7a7214406e2df2f0e",
+        "start_seconds": 38
+      },
+      "size": [
+        1080,
+        674
+      ],
+      "scan_ticks": [
+        0,
+        63
+      ],
+      "layouts": {
+        "strip": {
+          "top": [
+            922,
+            0,
+            158,
+            89
+          ],
+          "middle": [
+            922,
+            89,
+            158,
+            89
+          ],
+          "bottom": [
+            922,
+            178,
+            158,
+            88
+          ]
+        }
+      },
+      "anchors": {
+        "0": "strip",
+        "15": "strip",
+        "16": "strip",
+        "27": "strip",
+        "38": "strip",
+        "51": "strip",
+        "55": "strip",
+        "63": "strip"
+      },
+      "camera_states": {
+        "default": {
+          "top": "video",
+          "middle": "video",
+          "bottom": "video"
+        }
+      },
+      "cases": [
+        {
+          "name": "zoom-dense",
+          "drop_ticks": [],
+          "events": [],
+          "negative_windows": [
+            [
+              1,
+              63
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}
