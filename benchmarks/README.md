@@ -36,6 +36,8 @@ The portraits, rooms, labels, and presentation slide are drawn by the generator.
 
 ## Frozen release accuracy
 
+[Synthetic gallery accuracy results](results/gallery-accuracy-2026-11-23.md)
+
 Run all six cases through one GPU-enabled release binary. This checks exact
 CPU/Metal result parity except for backend diagnostics, including comparisons
 of observations, participant and appearance tracks, events, and coverage.
@@ -83,4 +85,10 @@ To exercise a compressed-input pipeline, wrap the same RGB frame sequence in a l
 ffmpeg -f rawvideo -pixel_format rgb24 -video_size 960x540 -framerate 10 \
   -i /tmp/tiletrail-gallery-fixtures/interview.rgb -c:v libx264rgb -crf 0 \
   /tmp/tiletrail-gallery-fixtures/interview.mp4
+
+mpcut participants scan --file /tmp/tiletrail-gallery-fixtures/interview.mp4 \
+  --backend cpu-only --sampling every-frame --no-sidecar --json \
+  > /tmp/tiletrail-gallery-fixtures/interview.mpcut.json
+python3 benchmarks/score_gallery.py /tmp/tiletrail-gallery-fixtures/interview.truth.json \
+  /tmp/tiletrail-gallery-fixtures/interview.mpcut.json
 ```

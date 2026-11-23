@@ -102,7 +102,9 @@ impl Analyzer {
                 error.resume_at = *self.uncommitted.get_or_insert(timestamp);
                 error
             })?;
-        let detection = vision::detect(&measurements);
+        let mut detection = vision::detect(&measurements);
+        self.tracker
+            .verify_thumbnail_subdivision(&measurements, &mut detection);
         self.tracker
             .push(&frame, detection, self.config.sampling == Sampling::Sparse);
         self.uncommitted = None;

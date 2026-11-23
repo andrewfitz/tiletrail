@@ -22,12 +22,23 @@ class GalleryScoringTests(unittest.TestCase):
             ],
             "events": [],
         }
+        mpcut = {
+            "analysis": {
+                "observations": [
+                    {"timestamp": {"numerator": tick, "denominator": 20}, "regions": [region]}
+                    for tick in (0, 1, 2)
+                ],
+                "events": [],
+            }
+        }
 
-        result = score(truth, analysis)
-        self.assertEqual(result["extra_observation_timestamps"], 1)
-        self.assertEqual(result["false_boxes"], 1)
-        self.assertEqual(result["expected_returns"], 0)
-        self.assertEqual(result["unmatched_returns"], 0)
+        for name, result in (("TileTrail", analysis), ("MPCut", mpcut)):
+            with self.subTest(format=name):
+                metrics = score(truth, result)
+                self.assertEqual(metrics["extra_observation_timestamps"], 1)
+                self.assertEqual(metrics["false_boxes"], 1)
+                self.assertEqual(metrics["expected_returns"], 0)
+                self.assertEqual(metrics["unmatched_returns"], 0)
 
 
 if __name__ == "__main__":

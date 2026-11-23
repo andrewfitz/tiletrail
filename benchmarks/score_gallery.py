@@ -44,6 +44,8 @@ def associate(actual, expected):
 
 
 def source_frame(stamp, fps):
+    if "time_base" not in stamp:
+        return Fraction(stamp["numerator"] * fps, stamp["denominator"])
     clock = stamp["time_base"]
     return Fraction(stamp["pts"] * clock["numerator"] * fps, clock["denominator"])
 
@@ -114,6 +116,7 @@ def event_errors(confirmed, expected):
 
 def score(truth, result):
     width, height, fps = truth["width"], truth["height"], truth["fps"]
+    result = result.get("analysis", result)
     expected = {
         frame["frame"]: [dict(tile, normalized=normalized(tile["rect"], width, height)) for tile in frame["tiles"]]
         for frame in truth["frames"]
@@ -170,14 +173,14 @@ def score(truth, result):
             by_kind[tile["kind"]]["matched"] += 1
             by_kind[tile["kind"]]["correct_kind"] += region["kind"] == tile["kind"]
             counts["roles_correct"] += region["role"] == tile["role"]
-            identity, person = region["participant_id"], tile["person"]
+            identity, person = region.get("participant_id"), tile["person"]
             if person is None:
                 counts["screen_share_with_identity"] += identity is not None
                 continue
             counts["identity_candidates"] += 1
             uncertain = region.get("identity_uncertain")
             if uncertain is None:
-                uncertain = region["identity_confidence"] is None and any(
+                uncertain = region.get("identity_confidence") is None and any(
                     option["participant_id"] != identity for option in region["possible_matches"]
                 )
             if uncertain:

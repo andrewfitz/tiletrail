@@ -1,5 +1,13 @@
+#[path = "vision/cards.rs"]
+mod cards;
+#[path = "vision/gallery.rs"]
+mod gallery;
+#[path = "vision/junction.rs"]
+mod junction;
 #[path = "vision/overlay.rs"]
 mod overlay;
+#[path = "vision/sidebar.rs"]
+mod sidebar;
 
 use crate::{Frame, PixelFormat, Rect, Rotation, TileKind, TileRole};
 
@@ -177,7 +185,7 @@ fn matte_color(image: &Measurements, bounds: Bounds) -> Option<[u8; 3]> {
         .into_iter()
         .enumerate()
         .max_by_key(|(_, count)| *count)?;
-    let perimeter = 2 * (bounds.right + bounds.bottom);
+    let perimeter = 2 * (bounds.right - bounds.left + bounds.bottom - bounds.top);
     if dark_support * 6 >= perimeter {
         return Some([3; 3]);
     }
@@ -519,6 +527,40 @@ fn describe(image: &Measurements, bounds: Bounds) -> (Vec<f32>, TileKind, bool) 
     (descriptor, kind, presentation_hint)
 }
 
+/// Re-measure a previous display-space crop against the current sampled image.
+pub(crate) fn reobserve(image: &Measurements, prior: &Tile) -> Option<Tile> {
+    let Rect {
+        x,
+        y,
+        width: w,
+        height: h,
+    } = prior.rect;
+    let (x, y, w, h) = match image.rotation {
+        Rotation::R0 => (x, y, w, h),
+        Rotation::R90 => (y, 1.0 - x - w, h, w),
+        Rotation::R180 => (1.0 - x - w, 1.0 - y - h, w, h),
+        Rotation::R270 => (1.0 - y - h, x, h, w),
+    };
+    let at = |p: f32, limit: u32| (p.clamp(0.0, 1.0) * limit as f32).round() as usize;
+    let bounds = Bounds {
+        left: at(x, image.width),
+        right: at(x + w, image.width),
+        top: at(y, image.height),
+        bottom: at(y + h, image.height),
+    };
+    if bounds.left >= bounds.right || bounds.top >= bounds.bottom {
+        return None;
+    }
+    let (descriptor, kind, _) = describe(image, bounds);
+    Some(Tile {
+        rect: bounds.display_rect(image),
+        descriptor,
+        kind,
+        role: prior.role,
+        confidence: prior.confidence,
+    })
+}
+
 pub(crate) fn appearance_distance(left: &[f32], right: &[f32]) -> f32 {
     if left.len() != DESCRIPTOR_VALUES || right.len() != DESCRIPTOR_VALUES {
         return 1.0;
@@ -548,16 +590,18 @@ pub(crate) fn detect(image: &Measurements) -> Detection {
         bottom: image.height as usize,
     };
     let matte = matte_color(image, whole_frame);
-    let mut pending = vec![(whole_frame, 1.0_f32)];
-    let mut regions = Vec::new();
+    let cards = matte.and_then(|_| cards::find(image, whole_frame));
+    let framed_strip = cards.is_some();
+    let (stage, cards) = cards.unwrap_or((whole_frame, Vec::new()));
+    let mut regions: Vec<_> = cards.into_iter().map(|b| (b, 0.85, false)).collect();
     let mut side_panels = Vec::new();
-    let canvas = surface(image, whole_frame);
-    let overlay = (canvas.document || canvas.dark_canvas)
+    let canvas = surface(image, stage);
+    let overlay = (!framed_strip && (canvas.document || canvas.dark_canvas))
         .then(|| overlay::find(image, whole_frame))
         .flatten();
     let has_overlay = overlay.is_some();
+    let mut pending = Vec::new();
     if let Some(strip) = overlay {
-        pending.clear();
         if canvas.document {
             let stage = strip.stage(image, whole_frame, matte);
             if stage.area() > 0 {
@@ -568,6 +612,13 @@ pub(crate) fn detect(image: &Measurements) -> Detection {
             let tile = matte.map_or(bounds, |color| trim_matte(image, bounds, color));
             (tile.area() > 0).then_some((tile, 0.85, false))
         }));
+    } else if let Some((document, tile)) =
+        matte.and_then(|color| sidebar::find(image, stage, color))
+    {
+        regions.push((document, 0.86, true));
+        regions.push((tile, 0.85, false));
+    } else {
+        pending.push((stage, 1.0_f32));
     }
     while let Some((bounds, confidence)) = pending.pop() {
         let trimmed = matte.map_or(bounds, |color| trim_matte(image, bounds, color));
@@ -609,6 +660,18 @@ pub(crate) fn detect(image: &Measurements) -> Detection {
         regions.extend(side_panels);
     }
 
+    let recovered = gallery::recover(image, whole_frame, &regions);
+    let in_grid = recovered.is_some();
+    if let Some(cells) = recovered {
+        regions = cells.into_iter().map(|b| (b, 0.9, false)).collect();
+    }
+
+    if let [(bounds, _, false)] = regions.as_slice() {
+        if let Some(cells) = junction::find(image, *bounds) {
+            regions = cells.into_iter().map(|b| (b, 0.75, false)).collect();
+        }
+    }
+
     let largest = regions
         .iter()
         .map(|(bounds, _, _)| bounds.area())
@@ -623,6 +686,9 @@ pub(crate) fn detect(image: &Measurements) -> Detection {
         .into_iter()
         .map(|(bounds, confidence, document)| {
             let (descriptor, mut kind, presentation_hint) = describe(image, bounds);
+            if in_grid && kind == TileKind::Video && gallery::colored_card(image, bounds) {
+                kind = TileKind::CameraOff;
+            }
             if document {
                 kind = TileKind::ScreenShare;
             }
@@ -699,6 +765,117 @@ mod tests {
                 tile.rect
             );
         }
+    }
+
+    #[test]
+    fn inset_camera_left_of_a_document_survives_the_matte() {
+        let image = scene(&[
+            (40, 4, 120, 88, [245; 3]),
+            (50, 20, 80, 6, [70; 3]),
+            (0, 36, 40, 25, GREEN),
+        ]);
+        let result = detect(&image);
+        assert_eq!(result.tiles.len(), 2);
+        let thumbnail = result
+            .tiles
+            .iter()
+            .find(|tile| tile.role == TileRole::Thumbnail)
+            .unwrap();
+        assert_box(thumbnail, [0.0, 36.0 / 96.0, 0.25, 25.0 / 96.0]);
+        assert!(
+            result
+                .tiles
+                .iter()
+                .any(|tile| tile.kind == TileKind::ScreenShare)
+        );
+    }
+
+    #[test]
+    fn adjacent_cards_require_foreground_inside_each_surface() {
+        let mut paint = vec![(0, 12, 160, 84, GREEN)];
+        for (i, level) in [25, 35, 45].into_iter().enumerate() {
+            paint.push((20 * i, 0, 20, 12, [level; 3]));
+        }
+        let frame = Bounds {
+            left: 0,
+            top: 0,
+            right: 160,
+            bottom: 96,
+        };
+        assert!(cards::find(&scene(&paint), frame).is_none());
+        for i in 0..3 {
+            paint.push((i * 20 + 8, 4, 4, 4, RED));
+        }
+        let (stage, tiles) = cards::find(&scene(&paint), frame).unwrap();
+        assert_eq!(stage.top, 12);
+        assert_eq!(tiles.len(), 3);
+        assert_eq!(
+            (tiles[2].left, tiles[2].right, tiles[2].bottom),
+            (40, 60, 12)
+        );
+    }
+
+    #[test]
+    fn a_single_edge_does_not_establish_a_borderless_gallery() {
+        let frame = Bounds {
+            left: 0,
+            top: 0,
+            right: 160,
+            bottom: 96,
+        };
+        let mut paint = vec![(0, 0, 160, 96, RED), (65, 0, 95, 96, BLUE)];
+        assert!(junction::find(&scene(&paint), frame).is_none());
+        paint.push((65, 52, 95, 44, GREEN));
+        let cells = junction::find(&scene(&paint), frame).unwrap();
+        assert_eq!(cells.len(), 3);
+    }
+
+    #[test]
+    fn dense_gallery_recovery_keeps_a_separate_document() {
+        let frame = Bounds {
+            left: 0,
+            top: 0,
+            right: 160,
+            bottom: 96,
+        };
+        let document = frame.with_extent(false, 0, 23);
+        let mut regions = vec![(document, 0.86, true)];
+        let mut paint = vec![(0, 0, 23, 96, [238; 3]), (1, 20, 21, 4, GRAY)];
+        for row in 0..3 {
+            for col in 0..3 {
+                let left = 30 + 43 * col;
+                let top = 2 + 32 * row;
+                paint.push((left, top, 40, 28, RED));
+                regions.push((
+                    Bounds {
+                        left,
+                        top,
+                        right: left + 40,
+                        bottom: top + 28,
+                    },
+                    0.85,
+                    false,
+                ));
+            }
+        }
+        let image = scene(&paint);
+        assert!(gallery::recover(&image, frame, &regions).is_none());
+        regions[0].2 = false;
+        assert_eq!(gallery::recover(&image, frame, &regions).unwrap().len(), 9);
+    }
+
+    #[test]
+    fn colored_cards_need_a_distinct_center() {
+        let frame = Bounds {
+            left: 0,
+            top: 0,
+            right: 160,
+            bottom: 96,
+        };
+        let mut paint = vec![(0, 0, 160, 96, GREEN)];
+        assert!(!gallery::colored_card(&scene(&paint), frame));
+        paint.push((65, 40, 30, 16, [215; 3]));
+        assert!(gallery::colored_card(&scene(&paint), frame));
     }
 
     #[test]

@@ -10,6 +10,15 @@ The scorer samples at 4 fps. Manual participant boxes are in excerpt pixels as `
 
 A separate [gallery screenshot set](stills/README.md) adds spatial samples of tiled layouts for both platforms.
 
+## Development results
+
+| Samples | Labeled regions | Earlier matches / extras | Updated matches / extras | Updated mean matched IoU |
+| --- | ---: | ---: | ---: | ---: |
+| 16 frames from moving clips | 30 | 8 / 16 | 30 / 0 | 0.970 |
+| Four gallery screenshots | 55 | 38 / 25 | 55 / 0 | 0.964 |
+
+The earlier CPU detector at `d9798c1` classified the camera state correctly for 8 of 8 matched moving-clip regions and 22 of 38 matched screenshot regions. The updated detector at `3e60bfc` classified all 85 matched regions correctly. These are development measurements on the layouts used to refine the detector. [Per-clip results and CPU timings](../../benchmarks/results/platform-development-2026-11-23.json)
+
 ## Sources and reuse
 
 - The Google Meet speaker and camera-on sidebar excerpts come from the March 4, 2024 Abstract Wikipedia Volunteer's Corner by Sannita (WMF), under CC BY-SA 4.0. [Recording and license](https://commons.wikimedia.org/wiki/File:Abstract_Wikipedia_Volunteer_Corner_2024-03.webm) · [Platform](https://commons.wikimedia.org/wiki/Category:Abstract_Wikipedia_Volunteer%27s_Corner)

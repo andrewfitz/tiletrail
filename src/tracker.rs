@@ -1,6 +1,9 @@
+mod evidence;
+
 use crate::markers::hard_cut;
 use crate::vision::{Detection, Tile, appearance_distance};
 use crate::*;
+use evidence::{interior_weight, match_avatars};
 use pathfinding::{kuhn_munkres::kuhn_munkres, matrix::Matrix};
 use std::collections::BTreeMap;
 
@@ -58,8 +61,17 @@ impl Tracker {
         let mut weights = Matrix::new(tiles.len(), candidates.len() + tiles.len(), UNMATCHED);
         for (row, tile) in tiles.iter().enumerate() {
             for (col, candidate) in candidates.iter().enumerate() {
-                weights[(row, col)] = score(tile, candidate, col < active_count);
+                let base = score(tile, candidate, col < active_count);
+                weights[(row, col)] = if col < active_count && base < 720 {
+                    interior_weight(row, col, &tiles, &self.active, base)
+                } else {
+                    base
+                };
             }
+        }
+        let avatar_matches = match_avatars(&tiles, &self.active);
+        for &(row, column, weight) in &avatar_matches {
+            weights[(row, column)] = weight;
         }
         let (_, matches) = if tiles.is_empty() {
             (0, Vec::new())
@@ -119,7 +131,13 @@ impl Tracker {
             .collect();
 
         review_merged_slots(&tiles, &candidates, active_count, &mut decisions);
-        review_placeholders(&tiles, &candidates, active_count, &mut decisions);
+        review_placeholders(
+            &tiles,
+            &candidates,
+            active_count,
+            &avatar_matches,
+            &mut decisions,
+        );
         reconcile_stage_switches(&tiles, &candidates, active_count, &mut decisions);
 
         let mut next = Vec::with_capacity(tiles.len());
@@ -508,6 +526,7 @@ fn review_placeholders(
     tiles: &[Tile],
     candidates: &[&Sample],
     active_count: usize,
+    avatar_matches: &[(usize, usize, i32)],
     decisions: &mut [Decision],
 ) {
     if !tiles.iter().any(|tile| tile.kind == TileKind::CameraOff) {
@@ -515,8 +534,11 @@ fn review_placeholders(
     }
     let mut visible = std::collections::BTreeSet::new();
     let mut reflow = false;
-    for (tile, decision) in tiles.iter().zip(decisions.iter()) {
-        if tile.kind != TileKind::Video {
+    for (row, (tile, decision)) in tiles.iter().zip(decisions.iter()).enumerate() {
+        let avatar = decision
+            .matched
+            .is_some_and(|col| avatar_matches.iter().any(|&(r, c, _)| r == row && c == col));
+        if tile.kind != TileKind::Video && !avatar {
             continue;
         }
         if let Some(index) = decision.matched {
@@ -528,8 +550,12 @@ fn review_placeholders(
         }
     }
 
-    for (tile, decision) in tiles.iter().zip(decisions) {
-        if tile.kind != TileKind::CameraOff || (decision.matched.is_some() && !reflow) {
+    for (row, (tile, decision)) in tiles.iter().zip(decisions).enumerate() {
+        if tile.kind != TileKind::CameraOff
+            || decision.matched.is_some_and(|col| {
+                !reflow || avatar_matches.iter().any(|&(r, c, _)| r == row && c == col)
+            })
+        {
             continue;
         }
         // A provisional card remaining in its slot already carries its alternatives.
@@ -748,6 +774,7 @@ fn feed_partner(row: usize, tiles: &[Tile]) -> FeedMatch {
 
 #[cfg(test)]
 mod tests {
+    use super::evidence::matching_interior;
     use super::*;
 
     fn tile(x: f32, y: f32, side: f32, identity: f32) -> Tile {
@@ -1051,5 +1078,155 @@ mod tests {
             assert_eq!(region.participant_id, Some(index as u64 + 1));
             assert!(!region.identity_uncertain);
         }
+    }
+    #[test]
+    fn distinctive_avatars_move_with_their_tracks_but_duplicate_cards_stay_provisional() {
+        let avatar = |x, y, rgb: [f32; 3]| {
+            let mut card = tile(x, y, 0.4, 0.1);
+            card.kind = TileKind::CameraOff;
+            for cell in [5, 6, 9, 10] {
+                card.descriptor[3 * cell..3 * cell + 3].copy_from_slice(&rgb);
+            }
+            card.descriptor[48..].fill(0.0);
+            for (c, value) in rgb.into_iter().enumerate() {
+                card.descriptor[48 + c * 8] = 0.75;
+                card.descriptor[48 + c * 8 + (value * 8.0) as usize] += 0.25;
+            }
+            card
+        };
+        let coral = [0.85, 0.3, 0.18];
+        let blue = [0.1, 0.35, 0.8];
+        for second in [blue, coral] {
+            let mut tracker = Tracker::default();
+            push(
+                &mut tracker,
+                0,
+                vec![avatar(0.0, 0.0, coral), avatar(0.5, 0.0, second)],
+            );
+            push(
+                &mut tracker,
+                1,
+                vec![avatar(0.0, 0.5, second), avatar(0.5, 0.5, coral)],
+            );
+            let regions = &tracker.observations[1].regions;
+            if second == blue {
+                assert_eq!(regions[0].participant_id, Some(2));
+                assert_eq!(regions[1].participant_id, Some(1));
+                assert!(regions.iter().all(|r| !r.identity_uncertain));
+            } else {
+                assert!(
+                    regions
+                        .iter()
+                        .all(|r| r.identity_uncertain && r.possible_matches.len() >= 2)
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn thumbnail_subdivision_requires_current_pixel_evidence_from_multiple_prior_crops() {
+        let image = |inverted: bool| {
+            let mut pixels = Vec::new();
+            for y in 0..120 {
+                for x in 0..160 {
+                    let light = if (x / 20 + y / 20) % 2 == 0 { 0 } else { 65 };
+                    let rgb = [60 + light, 30 + light, (y / 40) * 36 + light];
+                    pixels.push(if inverted { rgb.map(|v| 255 - v) } else { rgb });
+                }
+            }
+            vision::Measurements {
+                width: 160,
+                height: 120,
+                pixels,
+                rotation: Rotation::R0,
+            }
+        };
+        let crop = |i: usize, count: usize, image: &vision::Measurements| {
+            let mut t = tile(0.75, i as f32 / count as f32, 0.25, 0.0);
+            t.rect.height = 1.0 / count as f32;
+            t.role = TileRole::Thumbnail;
+            vision::reobserve(image, &t).unwrap()
+        };
+        let before = image(false);
+        let mut tracker = Tracker::default();
+        push(
+            &mut tracker,
+            0,
+            (0..3).map(|i| crop(i, 3, &before)).collect(),
+        );
+        for changed in [false, true] {
+            let current = image(changed);
+            let mut proposed = Detection {
+                tiles: (0..5).map(|i| crop(i, 5, &current)).collect(),
+                confidence: 1.0,
+            };
+            tracker.verify_thumbnail_subdivision(&current, &mut proposed);
+            assert_eq!(proposed.tiles.len(), if changed { 5 } else { 3 });
+        }
+    }
+
+    #[test]
+    fn a_flat_center_or_single_unchanged_cell_cannot_anchor_a_redecorated_video() {
+        let old = vec![0.2; 72];
+        assert!(!matching_interior(&old, &old));
+        let mut textured = old.clone();
+        textured[15..18].fill(0.7);
+        let mut changed = vec![0.95; 72];
+        changed[15..18].fill(0.7);
+        assert!(!matching_interior(&textured, &changed));
+        for cell in [1, 4, 6] {
+            changed[cell * 3..cell * 3 + 3].fill(0.2);
+        }
+        assert!(matching_interior(&textured, &changed));
+    }
+    #[test]
+    fn a_shared_textured_background_cannot_confirm_replacement_occupants() {
+        let view = |x, background: f32| {
+            let mut view = tile(x, 0.0, 0.4, background);
+            for (cell, color) in [(1, 0.15), (4, 0.2), (5, 0.7), (6, 0.3)] {
+                view.descriptor[cell * 3..cell * 3 + 3].fill(color);
+            }
+            view
+        };
+        let mut tracker = Tracker::default();
+        push(&mut tracker, 0, vec![view(0.0, 0.05), view(0.5, 0.15)]);
+        push(&mut tracker, 1, vec![view(0.0, 0.95), view(0.5, 0.85)]);
+        assert!(
+            tracker.observations[1]
+                .regions
+                .iter()
+                .all(|r| r.identity_uncertain)
+        );
+    }
+    #[test]
+    fn repeated_striped_thumbnail_crops_do_not_veto_a_new_subdivision() {
+        let image = vision::Measurements {
+            width: 160,
+            height: 120,
+            rotation: Rotation::R0,
+            pixels: (0..160 * 120)
+                .map(|i| {
+                    if i % 160 % 32 < 16 {
+                        [40, 65, 35]
+                    } else {
+                        [175, 110, 85]
+                    }
+                })
+                .collect(),
+        };
+        let crop = |i, n| {
+            let mut t = tile(0.6, i as f32 / n as f32, 0.4, 0.);
+            t.rect.height = 1.0 / n as f32;
+            t.role = TileRole::Thumbnail;
+            vision::reobserve(&image, &t).unwrap()
+        };
+        let mut tracker = Tracker::default();
+        push(&mut tracker, 0, (0..2).map(|i| crop(i, 2)).collect());
+        let mut detection = Detection {
+            tiles: (0..3).map(|i| crop(i, 3)).collect(),
+            confidence: 1.,
+        };
+        tracker.verify_thumbnail_subdivision(&image, &mut detection);
+        assert_eq!(detection.tiles.len(), 3);
     }
 }
