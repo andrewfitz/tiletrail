@@ -1,0 +1,269 @@
+{
+  "frames_per_second": 4,
+  "samples_are_clip_relative": true,
+  "fixtures": [
+    {
+      "clip": "meet-holdout.mp4",
+      "platform": "Google Meet",
+      "source_start_sec": 718,
+      "size": [
+        1180,
+        720
+      ],
+      "samples": [
+        {
+          "tick": 4,
+          "tiles": [
+            {
+              "id": "a",
+              "box": [
+                861,
+                271,
+                319,
+                180
+              ],
+              "kind": "video"
+            }
+          ]
+        },
+        {
+          "tick": 8,
+          "tiles": [
+            {
+              "id": "a",
+              "box": [
+                861,
+                271,
+                319,
+                180
+              ],
+              "kind": "video"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "clip": "teams-holdout.mp4",
+      "platform": "Microsoft Teams",
+      "source_start_sec": 37,
+      "size": [
+        1280,
+        720
+      ],
+      "samples": [
+        {
+          "tick": 4,
+          "tiles": [
+            {
+              "id": "a",
+              "box": [
+                5,
+                308,
+                552,
+                328
+              ],
+              "kind": "video"
+            },
+            {
+              "id": "b",
+              "box": [
+                560,
+                307,
+                554,
+                330
+              ],
+              "kind": "video"
+            },
+            {
+              "id": "b",
+              "box": [
+                1115,
+                217,
+                164,
+                220
+              ],
+              "kind": "video"
+            },
+            {
+              "id": "c",
+              "box": [
+                865,
+                165,
+                249,
+                142
+              ],
+              "kind": "camera_off"
+            }
+          ]
+        },
+        {
+          "tick": 8,
+          "tiles": [
+            {
+              "id": "a",
+              "box": [
+                5,
+                308,
+                552,
+                328
+              ],
+              "kind": "video"
+            },
+            {
+              "id": "b",
+              "box": [
+                560,
+                307,
+                554,
+                330
+              ],
+              "kind": "video"
+            },
+            {
+              "id": "b",
+              "box": [
+                1115,
+                217,
+                164,
+                220
+              ],
+              "kind": "video"
+            },
+            {
+              "id": "c",
+              "box": [
+                865,
+                165,
+                249,
+                142
+              ],
+              "kind": "camera_off"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "clip": "zoom-holdout.mp4",
+      "platform": "Zoom",
+      "source_start_sec": 61,
+      "size": [
+        1706,
+        790
+      ],
+      "samples": [
+        {
+          "tick": 4,
+          "tiles": [
+            {
+              "id": "0",
+              "box": [
+                1426,
+                0,
+                280,
+                158
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "1",
+              "box": [
+                1426,
+                158,
+                280,
+                158
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "2",
+              "box": [
+                1426,
+                316,
+                280,
+                158
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "3",
+              "box": [
+                1426,
+                474,
+                280,
+                158
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "4",
+              "box": [
+                1426,
+                632,
+                280,
+                158
+              ],
+              "kind": "video"
+            }
+          ]
+        },
+        {
+          "tick": 8,
+          "tiles": [
+            {
+              "id": "0",
+              "box": [
+                1426,
+                0,
+                280,
+                158
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "1",
+              "box": [
+                1426,
+                158,
+                280,
+                158
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "2",
+              "box": [
+                1426,
+                316,
+                280,
+                158
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "3",
+              "box": [
+                1426,
+                474,
+                280,
+                158
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "4",
+              "box": [
+                1426,
+                632,
+                280,
+                158
+              ],
+              "kind": "video"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

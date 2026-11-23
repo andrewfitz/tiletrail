@@ -1,0 +1,61 @@
+{
+  "detector": {
+    "git_commit": "ddec86e84f7ee0b80c50ac534ddf0ce245daeac3",
+    "build": "cargo build --release --locked --no-default-features",
+    "platform": "Darwin arm64",
+    "rustc": "1.99.0",
+    "ffmpeg": "9.0.2",
+    "shared_library_sha256": "72e11366b5969315d85641ff018c569dd93c6f939948867ef308098282fbb131"
+  },
+  "iou_threshold": 0.5,
+  "clips": {
+    "meet-holdout.mp4": {
+      "frames": 2,
+      "expected": 2,
+      "predicted": 4,
+      "matched": 0,
+      "false_positives": 4,
+      "false_negatives": 2,
+      "precision": 0.0,
+      "recall": 0.0,
+      "mean_matched_iou": null,
+      "matched_kind_accuracy": null
+    },
+    "teams-holdout.mp4": {
+      "frames": 2,
+      "expected": 8,
+      "predicted": 5,
+      "matched": 1,
+      "false_positives": 4,
+      "false_negatives": 7,
+      "precision": 0.2,
+      "recall": 0.125,
+      "mean_matched_iou": 0.9760837816774711,
+      "matched_kind_accuracy": 1.0
+    },
+    "zoom-holdout.mp4": {
+      "frames": 2,
+      "expected": 10,
+      "predicted": 16,
+      "matched": 2,
+      "false_positives": 14,
+      "false_negatives": 8,
+      "precision": 0.125,
+      "recall": 0.2,
+      "mean_matched_iou": 0.9912824857216895,
+      "matched_kind_accuracy": 1.0
+    }
+  },
+  "total": {
+    "frames": 6,
+    "expected": 20,
+    "predicted": 25,
+    "matched": 3,
+    "false_positives": 22,
+    "false_negatives": 17,
+    "precision": 0.12,
+    "recall": 0.15,
+    "mean_matched_iou": 0.9862162510402834,
+    "matched_kind_accuracy": 1.0
+  }
+}

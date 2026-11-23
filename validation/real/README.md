@@ -1,6 +1,6 @@
 # Real recording validation
 
-This small benchmark scores participant tile geometry and camera-state classification on five three-second excerpts from two public videoconference recordings.
+The development set scores participant tile geometry and camera-state classification on five three-second excerpts from two public videoconference recordings.
 
 With Python 3 and FFmpeg on PATH, build the CPU library and run from the repository root.
 
@@ -17,7 +17,22 @@ The manual labels mark the outside bounds of visible participant tiles at one an
 
 Each sampled frame uses maximum-cardinality one-to-one matching above the IoU threshold. Any detector region classified as video, camera off, or unknown is a participant candidate. Camera-state accuracy is computed on matched participant boxes. IoU and camera-state averages describe matched boxes only. The full-screen share is a negative control for participant detections.
 
-The two samples per excerpt characterize the selected layouts and share false positives. They do not estimate platform-wide accuracy or measure event timing, identity tracking, or redaction. The local label IDs are annotation handles. The Zoom excerpts show participant strips during a screen share, including a slide transition. The gallery excerpts are from Jitsi. There is no Teams or Google Meet coverage in this set.
+The two samples per excerpt characterize the selected layouts and share false positives. They do not estimate platform-wide accuracy or measure event timing, identity tracking, or redaction. The local label IDs are annotation handles. The Zoom excerpts show participant strips during a screen share, including a slide transition. The gallery excerpts are from Jitsi. The separate evaluation sets include Google Meet, Microsoft Teams, and an additional Zoom recording.
+
+## Recorded results
+
+The final frozen CPU detector at `f1cdfb6292f7` was scored at IoU ≥ 0.50. The development samples were available for tuning. The first held-out set was scored at three frozen revisions. A second pair of recordings was first scored after the final accuracy freeze.
+
+| Set | Frames | Matched / labeled | False positives | Mean matched IoU | Kind agreement |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Zoom and Jitsi development recordings | 10 | 54 / 54 | 4 | 0.971 | 54 / 54 |
+| Meet and Teams development recordings | 16 | 30 / 30 | 0 | 0.970 | 30 / 30 |
+| First held-out recordings | 6 | 4 / 20 | 12 | 0.987 | 4 / 4 |
+| Final verification recordings | 4 | 2 / 4 | 2 | 0.994 | 2 / 2 |
+
+The Teams sessions in both reserved sets yielded no matched boxes. The first held-out Zoom excerpt recovered its one live webcam in both frames with no matches on the camera-off boxes. The reported mean IoU and camera-state agreement apply only to detections that matched a human label.
+
+[Zoom and Jitsi development per-clip metrics](final-development-metrics.json) · [Meet and Teams development per-clip metrics](final-platform-development-metrics.json) · [First held-out results and attribution](held-out/README.md) · [Final verification results and attribution](final-only/README.md)
 
 ## Attribution
 

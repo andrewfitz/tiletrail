@@ -1,0 +1,85 @@
+{
+  "detector": {
+    "git_commit": "f1cdfb6292f7860ee7a3ca46c9c64e25fe480d7b",
+    "build": "cargo build --release --locked --no-default-features",
+    "platform": "Darwin arm64",
+    "rustc": "1.99.0",
+    "ffmpeg": "9.0.2",
+    "shared_library_sha256": "2aa2d5f0c42e878b6ee92267b965993a4d42ee5de47732818d25adb9c60767e8"
+  },
+  "iou_threshold": 0.5,
+  "clips": {
+    "jitsi-gallery.mp4": {
+      "frames": 2,
+      "expected": 20,
+      "predicted": 20,
+      "matched": 20,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "mean_matched_iou": 0.9729425517799271,
+      "matched_kind_accuracy": 1.0
+    },
+    "jitsi-gallery-share.mp4": {
+      "frames": 2,
+      "expected": 20,
+      "predicted": 24,
+      "matched": 20,
+      "false_positives": 4,
+      "false_negatives": 0,
+      "precision": 0.8333333333333334,
+      "recall": 1.0,
+      "mean_matched_iou": 0.9681282809756265,
+      "matched_kind_accuracy": 1.0
+    },
+    "jitsi-share-only.mp4": {
+      "frames": 2,
+      "expected": 0,
+      "predicted": 0,
+      "matched": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": null,
+      "recall": null,
+      "mean_matched_iou": null,
+      "matched_kind_accuracy": null
+    },
+    "zoom-three-thumbnails.mp4": {
+      "frames": 2,
+      "expected": 6,
+      "predicted": 6,
+      "matched": 6,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "mean_matched_iou": 0.9738474169483687,
+      "matched_kind_accuracy": 1.0
+    },
+    "zoom-four-thumbnails.mp4": {
+      "frames": 2,
+      "expected": 8,
+      "predicted": 8,
+      "matched": 8,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "mean_matched_iou": 0.9725316317623266,
+      "matched_kind_accuracy": 1.0
+    }
+  },
+  "total": {
+    "frames": 10,
+    "expected": 54,
+    "predicted": 58,
+    "matched": 54,
+    "false_positives": 4,
+    "false_negatives": 0,
+    "precision": 0.9310344827586207,
+    "recall": 1.0,
+    "mean_matched_iou": 0.9711991520537019,
+    "matched_kind_accuracy": 1.0
+  }
+}

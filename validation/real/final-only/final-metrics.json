@@ -1,0 +1,49 @@
+{
+  "detector": {
+    "git_commit": "f1cdfb6292f7860ee7a3ca46c9c64e25fe480d7b",
+    "build": "cargo build --release --locked --no-default-features",
+    "platform": "Darwin arm64",
+    "rustc": "1.99.0",
+    "ffmpeg": "9.0.2",
+    "shared_library_sha256": "2aa2d5f0c42e878b6ee92267b965993a4d42ee5de47732818d25adb9c60767e8"
+  },
+  "iou_threshold": 0.5,
+  "clips": {
+    "meet-final-only.mp4": {
+      "frames": 2,
+      "expected": 2,
+      "predicted": 2,
+      "matched": 2,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "mean_matched_iou": 0.99375,
+      "matched_kind_accuracy": 1.0
+    },
+    "teams-final-only.mp4": {
+      "frames": 2,
+      "expected": 2,
+      "predicted": 2,
+      "matched": 0,
+      "false_positives": 2,
+      "false_negatives": 2,
+      "precision": 0.0,
+      "recall": 0.0,
+      "mean_matched_iou": null,
+      "matched_kind_accuracy": null
+    }
+  },
+  "total": {
+    "frames": 4,
+    "expected": 4,
+    "predicted": 4,
+    "matched": 2,
+    "false_positives": 2,
+    "false_negatives": 2,
+    "precision": 0.5,
+    "recall": 0.5,
+    "mean_matched_iou": 0.99375,
+    "matched_kind_accuracy": 1.0
+  }
+}

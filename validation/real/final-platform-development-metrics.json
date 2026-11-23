@@ -1,0 +1,121 @@
+{
+  "detector": {
+    "git_commit": "f1cdfb6292f7860ee7a3ca46c9c64e25fe480d7b",
+    "build": "cargo build --release --locked --no-default-features",
+    "platform": "Darwin arm64",
+    "rustc": "1.99.0",
+    "ffmpeg": "9.0.2",
+    "shared_library_sha256": "2aa2d5f0c42e878b6ee92267b965993a4d42ee5de47732818d25adb9c60767e8"
+  },
+  "iou_threshold": 0.5,
+  "clips": {
+    "meet-speaker.mp4": {
+      "frames": 2,
+      "expected": 2,
+      "predicted": 2,
+      "matched": 2,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "mean_matched_iou": 1.0,
+      "matched_kind_accuracy": 1.0
+    },
+    "meet-presenter-sidebar.mp4": {
+      "frames": 2,
+      "expected": 2,
+      "predicted": 2,
+      "matched": 2,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "mean_matched_iou": 0.9976580796252927,
+      "matched_kind_accuracy": 1.0
+    },
+    "meet-camera-off-sidebar.mp4": {
+      "frames": 2,
+      "expected": 2,
+      "predicted": 2,
+      "matched": 2,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "mean_matched_iou": 0.9976580796252927,
+      "matched_kind_accuracy": 1.0
+    },
+    "teams-speaker.mp4": {
+      "frames": 2,
+      "expected": 2,
+      "predicted": 2,
+      "matched": 2,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "mean_matched_iou": 1.0,
+      "matched_kind_accuracy": 1.0
+    },
+    "teams-presenter-sidebar.mp4": {
+      "frames": 2,
+      "expected": 2,
+      "predicted": 2,
+      "matched": 2,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "mean_matched_iou": 0.9666666821333335,
+      "matched_kind_accuracy": 1.0
+    },
+    "teams-slides-only.mp4": {
+      "frames": 2,
+      "expected": 0,
+      "predicted": 0,
+      "matched": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": null,
+      "recall": null,
+      "mean_matched_iou": null,
+      "matched_kind_accuracy": null
+    },
+    "teams-stage-filmstrip.mp4": {
+      "frames": 2,
+      "expected": 10,
+      "predicted": 10,
+      "matched": 10,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "mean_matched_iou": 0.9576046056504973,
+      "matched_kind_accuracy": 1.0
+    },
+    "teams-presenter-overlay.mp4": {
+      "frames": 2,
+      "expected": 10,
+      "predicted": 10,
+      "matched": 10,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "mean_matched_iou": 0.9611636650883424,
+      "matched_kind_accuracy": 1.0
+    }
+  },
+  "total": {
+    "frames": 16,
+    "expected": 30,
+    "predicted": 30,
+    "matched": 30,
+    "false_positives": 0,
+    "false_negatives": 0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "mean_matched_iou": 0.9703882796718745,
+    "matched_kind_accuracy": 1.0
+  }
+}

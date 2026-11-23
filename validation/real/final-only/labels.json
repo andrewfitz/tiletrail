@@ -1,0 +1,26 @@
+{
+  "frames_per_second": 4,
+  "samples_are_clip_relative": true,
+  "fixtures": [
+    {
+      "clip": "meet-final-only.mp4",
+      "platform": "Google Meet",
+      "source_start_sec": 178,
+      "size": [1280, 720],
+      "samples": [
+        {"tick": 4, "tiles": [{"id": "a", "box": [962, 270, 318, 180], "kind": "video"}]},
+        {"tick": 8, "tiles": [{"id": "a", "box": [962, 270, 318, 180], "kind": "video"}]}
+      ]
+    },
+    {
+      "clip": "teams-final-only.mp4",
+      "platform": "Microsoft Teams",
+      "source_start_sec": 29,
+      "size": [1920, 1080],
+      "samples": [
+        {"tick": 4, "tiles": [{"id": "a", "box": [1536, 432, 384, 216], "kind": "video"}]},
+        {"tick": 8, "tiles": [{"id": "a", "box": [1536, 432, 384, 216], "kind": "video"}]}
+      ]
+    }
+  ]
+}

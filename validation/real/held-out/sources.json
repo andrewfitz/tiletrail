@@ -1,0 +1,45 @@
+{
+  "source_files": [
+    {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/d/d8/Abstract_Wikipedia_Volunteer_Corner_2024-01.webm",
+      "sha256": "f16ed6446b7e8c56b25b62bdaf90ca252f818daa21955ba7fafac00dd35d9ced",
+      "clip": "meet-holdout.mp4",
+      "filter": "scale=1180:720,setsar=1"
+    },
+    {
+      "url": "https://d34w7g4gy10iej.cloudfront.net/video/2608/DOD_111925777/DOD_111925777.mp4",
+      "clip": "teams-holdout.mp4",
+      "clip_sha256": "96ea17827b14fc27ec4fc27923a1586a76ff9dd8ba961d0ca37bcd4360a08e77",
+      "source_bytes": 547183625,
+      "source_etag": "dc145d979742a49476018734a6d877a7-66"
+    },
+    {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/b/bc/%D0%9E%D0%BD%D0%BB%D0%B0%D0%B9%D0%BD-%D0%B2%D1%81%D1%82%D1%80%D0%B5%D1%87%D0%B0_%D0%92%D0%B8%D0%BA%D0%B8%D0%BC%D0%B5%D0%B4%D0%B8%D0%B0_%D0%A6%D0%B5%D0%BD%D1%82%D1%80%D0%B0%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F_%D0%B8_%D0%92%D0%BE%D1%81%D1%82%D0%BE%D1%87%D0%BD%D0%B0%D1%8F_%D0%95%D0%B2%D1%80%D0%BE%D0%BF%D0%B0_2020%2C_%D0%94%D0%B5%D0%BD%D1%8C_3_%28%D1%87%D0%B0%D1%81%D1%82%D1%8C_4%29.webm",
+      "sha256": "f97b4cec3de1907113a25cf6964269bde6a5094282247564dba5aac51fafab93",
+      "clip": "zoom-holdout.mp4"
+    }
+  ],
+  "ffmpeg_arguments": [
+    "-ss",
+    "SOURCE_START_SEC",
+    "-i",
+    "SOURCE_FILE",
+    "-t",
+    "3",
+    "-map",
+    "0:v:0",
+    "-an",
+    "-c:v",
+    "libx264",
+    "-preset",
+    "fast",
+    "-crf",
+    "17",
+    "-pix_fmt",
+    "yuv420p",
+    "-movflags",
+    "+faststart",
+    "CLIP"
+  ],
+  "video_filter": "Insert -vf FILTER before -c:v when the source specifies a filter."
+}
