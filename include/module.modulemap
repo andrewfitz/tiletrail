@@ -1,0 +1,4 @@
+module TileTrailC [system] {
+    header "tiletrail.h"
+    export *
+}

@@ -1,0 +1,649 @@
+{
+  "frames_per_second": 4,
+  "samples_are_clip_relative": true,
+  "fixtures": [
+    {
+      "clip": "jitsi-gallery.mp4",
+      "platform": "Jitsi",
+      "source_start_sec": 8,
+      "size": [
+        2000,
+        1200
+      ],
+      "samples": [
+        {
+          "tick": 4,
+          "tiles": [
+            {
+              "id": "a",
+              "box": [
+                644,
+                16,
+                330,
+                400
+              ],
+              "kind": "video"
+            },
+            {
+              "id": "e",
+              "box": [
+                982,
+                16,
+                330,
+                400
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "b",
+              "box": [
+                1320,
+                16,
+                330,
+                400
+              ],
+              "kind": "video"
+            },
+            {
+              "id": "c",
+              "box": [
+                1658,
+                16,
+                330,
+                400
+              ],
+              "kind": "video"
+            },
+            {
+              "id": "f",
+              "box": [
+                644,
+                424,
+                330,
+                400
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "d",
+              "box": [
+                982,
+                424,
+                330,
+                400
+              ],
+              "kind": "video"
+            },
+            {
+              "id": "g",
+              "box": [
+                1320,
+                424,
+                330,
+                400
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "h",
+              "box": [
+                1658,
+                424,
+                330,
+                400
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "i",
+              "box": [
+                644,
+                832,
+                668,
+                362
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "j",
+              "box": [
+                1320,
+                832,
+                668,
+                362
+              ],
+              "kind": "camera_off"
+            }
+          ]
+        },
+        {
+          "tick": 8,
+          "tiles": [
+            {
+              "id": "a",
+              "box": [
+                644,
+                16,
+                330,
+                400
+              ],
+              "kind": "video"
+            },
+            {
+              "id": "e",
+              "box": [
+                982,
+                16,
+                330,
+                400
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "b",
+              "box": [
+                1320,
+                16,
+                330,
+                400
+              ],
+              "kind": "video"
+            },
+            {
+              "id": "c",
+              "box": [
+                1658,
+                16,
+                330,
+                400
+              ],
+              "kind": "video"
+            },
+            {
+              "id": "f",
+              "box": [
+                644,
+                424,
+                330,
+                400
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "d",
+              "box": [
+                982,
+                424,
+                330,
+                400
+              ],
+              "kind": "video"
+            },
+            {
+              "id": "g",
+              "box": [
+                1320,
+                424,
+                330,
+                400
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "h",
+              "box": [
+                1658,
+                424,
+                330,
+                400
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "i",
+              "box": [
+                644,
+                832,
+                668,
+                362
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "j",
+              "box": [
+                1320,
+                832,
+                668,
+                362
+              ],
+              "kind": "camera_off"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "clip": "jitsi-gallery-share.mp4",
+      "platform": "Jitsi",
+      "source_start_sec": 116,
+      "size": [
+        2000,
+        1200
+      ],
+      "samples": [
+        {
+          "tick": 4,
+          "tiles": [
+            {
+              "id": "a",
+              "box": [
+                644,
+                16,
+                330,
+                400
+              ],
+              "kind": "video"
+            },
+            {
+              "id": "e",
+              "box": [
+                1320,
+                16,
+                330,
+                400
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "b",
+              "box": [
+                1658,
+                16,
+                330,
+                400
+              ],
+              "kind": "video"
+            },
+            {
+              "id": "c",
+              "box": [
+                644,
+                424,
+                330,
+                400
+              ],
+              "kind": "video"
+            },
+            {
+              "id": "f",
+              "box": [
+                982,
+                424,
+                330,
+                400
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "d",
+              "box": [
+                1320,
+                424,
+                330,
+                400
+              ],
+              "kind": "video"
+            },
+            {
+              "id": "g",
+              "box": [
+                1658,
+                424,
+                330,
+                400
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "h",
+              "box": [
+                644,
+                832,
+                442,
+                362
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "i",
+              "box": [
+                1095,
+                832,
+                442,
+                362
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "j",
+              "box": [
+                1546,
+                832,
+                442,
+                362
+              ],
+              "kind": "camera_off"
+            }
+          ]
+        },
+        {
+          "tick": 8,
+          "tiles": [
+            {
+              "id": "a",
+              "box": [
+                644,
+                16,
+                330,
+                400
+              ],
+              "kind": "video"
+            },
+            {
+              "id": "e",
+              "box": [
+                1320,
+                16,
+                330,
+                400
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "b",
+              "box": [
+                1658,
+                16,
+                330,
+                400
+              ],
+              "kind": "video"
+            },
+            {
+              "id": "c",
+              "box": [
+                644,
+                424,
+                330,
+                400
+              ],
+              "kind": "video"
+            },
+            {
+              "id": "f",
+              "box": [
+                982,
+                424,
+                330,
+                400
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "d",
+              "box": [
+                1320,
+                424,
+                330,
+                400
+              ],
+              "kind": "video"
+            },
+            {
+              "id": "g",
+              "box": [
+                1658,
+                424,
+                330,
+                400
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "h",
+              "box": [
+                644,
+                832,
+                442,
+                362
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "i",
+              "box": [
+                1095,
+                832,
+                442,
+                362
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "j",
+              "box": [
+                1546,
+                832,
+                442,
+                362
+              ],
+              "kind": "camera_off"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "clip": "jitsi-share-only.mp4",
+      "platform": "Jitsi",
+      "source_start_sec": 124,
+      "size": [
+        2000,
+        1200
+      ],
+      "samples": [
+        {
+          "tick": 4,
+          "tiles": []
+        },
+        {
+          "tick": 8,
+          "tiles": []
+        }
+      ]
+    },
+    {
+      "clip": "zoom-three-thumbnails.mp4",
+      "platform": "Zoom",
+      "source_start_sec": 40,
+      "size": [
+        1080,
+        674
+      ],
+      "samples": [
+        {
+          "tick": 4,
+          "tiles": [
+            {
+              "id": "1",
+              "box": [
+                922,
+                0,
+                158,
+                89
+              ],
+              "kind": "video"
+            },
+            {
+              "id": "2",
+              "box": [
+                922,
+                89,
+                158,
+                89
+              ],
+              "kind": "video"
+            },
+            {
+              "id": "3",
+              "box": [
+                922,
+                178,
+                158,
+                88
+              ],
+              "kind": "video"
+            }
+          ]
+        },
+        {
+          "tick": 8,
+          "tiles": [
+            {
+              "id": "1",
+              "box": [
+                922,
+                0,
+                158,
+                89
+              ],
+              "kind": "video"
+            },
+            {
+              "id": "2",
+              "box": [
+                922,
+                89,
+                158,
+                89
+              ],
+              "kind": "video"
+            },
+            {
+              "id": "3",
+              "box": [
+                922,
+                178,
+                158,
+                88
+              ],
+              "kind": "video"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "clip": "zoom-four-thumbnails.mp4",
+      "platform": "Zoom",
+      "source_start_sec": 88,
+      "size": [
+        1080,
+        674
+      ],
+      "samples": [
+        {
+          "tick": 4,
+          "tiles": [
+            {
+              "id": "1",
+              "box": [
+                922,
+                0,
+                158,
+                89
+              ],
+              "kind": "video"
+            },
+            {
+              "id": "2",
+              "box": [
+                922,
+                89,
+                158,
+                89
+              ],
+              "kind": "video"
+            },
+            {
+              "id": "3",
+              "box": [
+                922,
+                178,
+                158,
+                88
+              ],
+              "kind": "video"
+            },
+            {
+              "id": "4",
+              "box": [
+                922,
+                266,
+                158,
+                89
+              ],
+              "kind": "video"
+            }
+          ]
+        },
+        {
+          "tick": 8,
+          "tiles": [
+            {
+              "id": "1",
+              "box": [
+                922,
+                0,
+                158,
+                89
+              ],
+              "kind": "video"
+            },
+            {
+              "id": "2",
+              "box": [
+                922,
+                89,
+                158,
+                89
+              ],
+              "kind": "video"
+            },
+            {
+              "id": "3",
+              "box": [
+                922,
+                178,
+                158,
+                88
+              ],
+              "kind": "video"
+            },
+            {
+              "id": "4",
+              "box": [
+                922,
+                266,
+                158,
+                89
+              ],
+              "kind": "video"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "source_files": [
+    {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/f/fc/Abstract_Wikipedia_Volunteer_Corner_2023-09.webm",
+      "sha256": "4e3ffefc9e733d9aa677c9c31b45a5eb175081dc7226eeec769374f65bffaef8",
+      "clips": ["jitsi-gallery.mp4", "jitsi-gallery-share.mp4", "jitsi-share-only.mp4"]
+    },
+    {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/2/24/RU-07112021-WMCEEOM-Track1-LocalRecording-5.webmhd.webm",
+      "sha256": "a341f433888c6d2e33054ffda81f21f365cd55f97a8543c7a7214406e2df2f0e",
+      "clips": ["zoom-three-thumbnails.mp4", "zoom-four-thumbnails.mp4"]
+    }
+  ],
+  "ffmpeg_arguments": [
+    "-ss", "SOURCE_START_SEC", "-i", "SOURCE_FILE", "-t", "3", "-map", "0:v:0",
+    "-an", "-c:v", "libx264", "-preset", "fast", "-crf", "17", "-pix_fmt",
+    "yuv420p", "-movflags", "+faststart", "CLIP"
+  ]
+}

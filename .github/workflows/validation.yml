@@ -1,0 +1,112 @@
+name: Validate TileTrail
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      metal_hardware:
+        description: Run the Metal suite on a self-hosted Apple Silicon runner labeled metal
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  portable:
+    name: Rust and C on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test CPU, compile all features
+        shell: bash
+        run: |
+          rustup update stable
+          rustup default stable
+          cargo test --locked --no-default-features
+          cargo test --locked --all-features -- --skip metal_measurements_match_cpu_and_recover_from_device_destruction
+          cargo build --locked --all-features --release
+      - name: Generate synthetic gallery and analyze it in Rust
+        shell: bash
+        run: |
+          python benchmarks/make_gallery.py target/ffi-gallery --case gallery
+          cargo run --locked --release --example gallery_benchmark -- cpu target/ffi-gallery/gallery.rgb 960 540 10 1 target/ffi-gallery/rust.json
+      - name: Compile and run C client (macOS and Linux)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          cc -std=c11 -Wall -Wextra -Werror -Iinclude examples/c/analyze.c \
+            -Ltarget/release -ltiletrail -Wl,-rpath,"$PWD/target/release" -o target/ffi-gallery/analyze
+          DYLD_LIBRARY_PATH="$PWD/target/release" target/ffi-gallery/analyze \
+            target/ffi-gallery/gallery.rgb 960 540 0 1 10 > target/ffi-gallery/c.json
+      - name: Compile and run C client (Windows MSVC)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: |
+          for /f "usebackq delims=" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do call "%%i\VC\Auxiliary\Build\vcvars64.bat"
+          cl /nologo /std:c11 /W4 /WX /D_CRT_SECURE_NO_WARNINGS /Iinclude examples\c\analyze.c target\release\tiletrail.dll.lib /Fetarget\ffi-gallery\analyze.exe
+          if errorlevel 1 exit /b 1
+          set "PATH=%CD%\target\release;%PATH%"
+          target\ffi-gallery\analyze.exe target\ffi-gallery\gallery.rgb 960 540 0 1 10 > target\ffi-gallery\c.json
+      - name: Compare Rust and C snapshots and run Python
+        shell: bash
+        run: |
+          case "$RUNNER_OS" in
+            macOS) library=libtiletrail.dylib ;;
+            Linux) library=libtiletrail.so ;;
+            Windows) library=tiletrail.dll ;;
+          esac
+          python examples/python/analyze.py "target/release/$library" \
+            target/ffi-gallery/gallery.rgb 960 540 0 1 10 > target/ffi-gallery/python.json
+          python .github/verify_consumers.py target/ffi-gallery/{rust,c,python}.json
+      - name: Install packaged crate in a clean Cargo consumer
+        shell: bash
+        run: |
+          cargo package --locked
+          archive=$(find target/package -maxdepth 1 -name 'tiletrail-*.crate')
+          smoke=$(mktemp -d)
+          tar -xzf "$archive" -C "$smoke"
+          cargo new --vcs none --bin "$smoke/consumer"
+          crate=$(find "$smoke" -maxdepth 1 -type d -name 'tiletrail-*')
+          cargo add --manifest-path "$smoke/consumer/Cargo.toml" --path "$crate"
+          cargo add --manifest-path "$smoke/consumer/Cargo.toml" serde_json
+          cp examples/gallery_benchmark.rs "$smoke/consumer/src/main.rs"
+          cargo run --manifest-path "$smoke/consumer/Cargo.toml" --release -- \
+            cpu target/ffi-gallery/gallery.rgb 960 540 10 1 target/ffi-gallery/packaged-rust.json
+          python .github/verify_consumers.py target/ffi-gallery/{rust,packaged-rust}.json
+      - name: Package macOS C artifacts and validate from a clean directory
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          cargo build --locked --release --all-features
+          .github/package-macos.sh
+      - uses: actions/upload-artifact@v4
+        if: runner.os == 'macOS'
+        with:
+          name: tiletrail-macos-aarch64
+          path: target/tiletrail-macos-aarch64.tar.gz
+          if-no-files-found: error
+
+  metal:
+    if: github.event_name == 'workflow_dispatch' && inputs.metal_hardware
+    runs-on: [self-hosted, macOS, ARM64, metal]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Metal tests and compare gallery snapshots
+        shell: bash
+        run: |
+          cargo test --locked --all-features
+          python3 benchmarks/make_gallery.py target/metal-gallery --case gallery
+          for mode in cpu gpu; do
+            cargo run --locked --release --features gpu --example gallery_benchmark -- \
+              "$mode" target/metal-gallery/gallery.rgb 960 540 10 1 "target/metal-gallery/$mode.json"
+          done
+          python3 .github/verify_consumers.py --metal target/metal-gallery/{cpu,gpu}.json

@@ -1,0 +1,448 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TileTrail analysis v1",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "start": {
+      "$ref": "#/$defs/timestamp"
+    },
+    "end": {
+      "$ref": "#/$defs/timestamp"
+    },
+    "sampling": {
+      "enum": [
+        "every_frame",
+        "sparse"
+      ]
+    },
+    "observations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/observation"
+      }
+    },
+    "tracks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/track"
+      }
+    },
+    "appearances": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/appearance"
+      }
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/event"
+      }
+    },
+    "coverage": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/coverage"
+      }
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/diagnostic"
+      }
+    },
+    "resume_at": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/timestamp"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "schema_version",
+    "start",
+    "end",
+    "sampling",
+    "observations",
+    "tracks",
+    "appearances",
+    "events",
+    "coverage",
+    "diagnostics",
+    "resume_at"
+  ],
+  "$defs": {
+    "time_base": {
+      "type": "object",
+      "properties": {
+        "numerator": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4294967295
+        },
+        "denominator": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4294967295
+        }
+      },
+      "required": [
+        "numerator",
+        "denominator"
+      ]
+    },
+    "timestamp": {
+      "type": "object",
+      "properties": {
+        "pts": {
+          "type": "integer",
+          "minimum": -9223372036854775808,
+          "maximum": 9223372036854775807
+        },
+        "time_base": {
+          "$ref": "#/$defs/time_base"
+        }
+      },
+      "required": [
+        "pts",
+        "time_base"
+      ]
+    },
+    "display": {
+      "type": "object",
+      "properties": {
+        "rotation": {
+          "enum": [
+            "R0",
+            "R90",
+            "R180",
+            "R270"
+          ]
+        },
+        "pixel_aspect_num": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4294967295
+        },
+        "pixel_aspect_den": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4294967295
+        }
+      },
+      "required": [
+        "rotation",
+        "pixel_aspect_num",
+        "pixel_aspect_den"
+      ]
+    },
+    "rect": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "y": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "width": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "height": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height"
+      ]
+    },
+    "identity_match": {
+      "type": "object",
+      "properties": {
+        "participant_id": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 18446744073709551615
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "required": [
+        "participant_id",
+        "confidence"
+      ]
+    },
+    "region": {
+      "type": "object",
+      "properties": {
+        "appearance_id": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 18446744073709551615
+        },
+        "participant_id": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 18446744073709551615
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rect": {
+          "$ref": "#/$defs/rect"
+        },
+        "kind": {
+          "enum": [
+            "video",
+            "camera_off",
+            "screen_share",
+            "unknown"
+          ]
+        },
+        "role": {
+          "enum": [
+            "primary",
+            "thumbnail"
+          ]
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "identity_confidence": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "possible_matches": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/identity_match"
+          }
+        },
+        "identity_uncertain": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "appearance_id",
+        "participant_id",
+        "rect",
+        "kind",
+        "role",
+        "confidence",
+        "identity_confidence",
+        "possible_matches",
+        "identity_uncertain"
+      ]
+    },
+    "observation": {
+      "type": "object",
+      "properties": {
+        "timestamp": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "display": {
+          "$ref": "#/$defs/display"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "regions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/region"
+          }
+        }
+      },
+      "required": [
+        "timestamp",
+        "display",
+        "confidence",
+        "regions"
+      ]
+    },
+    "track": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 18446744073709551615
+        },
+        "appearance_ids": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 18446744073709551615
+          }
+        }
+      },
+      "required": [
+        "id",
+        "appearance_ids"
+      ]
+    },
+    "appearance": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 18446744073709551615
+        },
+        "participant_id": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 18446744073709551615
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "start": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "end": {
+          "$ref": "#/$defs/timestamp"
+        }
+      },
+      "required": [
+        "id",
+        "participant_id",
+        "start",
+        "end"
+      ]
+    },
+    "event": {
+      "type": "object",
+      "properties": {
+        "timestamp": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "participant_id": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 18446744073709551615
+        },
+        "appearance_id": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 18446744073709551615
+        },
+        "kind": {
+          "enum": [
+            "enter",
+            "leave",
+            "move",
+            "resize",
+            "camera_state",
+            "hard_cut"
+          ]
+        },
+        "uncertain": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "timestamp",
+        "participant_id",
+        "appearance_id",
+        "kind",
+        "uncertain"
+      ]
+    },
+    "coverage": {
+      "type": "object",
+      "properties": {
+        "start": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "end": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "status": {
+          "enum": [
+            "observed",
+            "inferred",
+            "unknown",
+            "incomplete"
+          ]
+        }
+      },
+      "required": [
+        "start",
+        "end",
+        "status"
+      ]
+    },
+    "diagnostic": {
+      "type": "object",
+      "properties": {
+        "timestamp": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "backend": {
+          "enum": [
+            "cpu",
+            "gpu"
+          ]
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "timestamp",
+        "backend",
+        "reason"
+      ]
+    }
+  }
+}
