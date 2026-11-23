@@ -265,3 +265,129 @@ fn tracker_emits_a_selectable_hard_cut_without_treating_a_border_flash_as_one() 
     assert_eq!(markers[0].timestamp, time(80));
     assert!(markers[0].uncertain);
 }
+
+#[test]
+fn marker_grouping_handles_full_timestamp_range_and_unordered_events() {
+    let stamp = |pts| Timestamp::new(pts, u32::MAX, u32::MAX);
+    let first = stamp(i64::MIN + 1);
+    let boundary = stamp(i64::MIN + 2);
+    let last = stamp(i64::MAX - 1);
+    let mut result = analysis(
+        vec![frame(0, &[1, 2]); 4],
+        vec![
+            ChangeEvent {
+                timestamp: last,
+                ..event(0, 1, ChangeKind::HardCut)
+            },
+            ChangeEvent {
+                timestamp: boundary,
+                ..event(0, 2, ChangeKind::HardCut)
+            },
+            ChangeEvent {
+                timestamp: first,
+                ..event(0, 1, ChangeKind::HardCut)
+            },
+            event(0, 2, ChangeKind::HardCut),
+            ChangeEvent {
+                timestamp: Timestamp::new(0, 0, 1),
+                ..event(0, 2, ChangeKind::HardCut)
+            },
+        ],
+    );
+    result.start = stamp(i64::MIN);
+    result.end = stamp(i64::MAX);
+    result.coverage[0].start = result.start;
+    result.coverage[0].end = result.end;
+    for (frame, timestamp) in
+        result
+            .observations
+            .iter_mut()
+            .zip([result.start, first, boundary, last])
+    {
+        frame.timestamp = timestamp;
+    }
+    result.observations[1].regions[0].identity_uncertain = true;
+    let mut rule = rule(
+        MarkerUnit::Participants,
+        MarkerThreshold::Any,
+        &[ChangeKind::HardCut],
+    );
+    rule.settling_window_ms = 1000;
+    let markers = result.scene_markers(&rule);
+    assert_eq!(markers.len(), 2);
+    assert_eq!(markers[0].timestamp, first);
+    assert_eq!(markers[0].end_timestamp, boundary);
+    assert_eq!(markers[0].participant_ids, [1, 2]);
+    assert!(markers[0].uncertain);
+    assert_eq!(markers[1].timestamp, last);
+    assert!(!markers[1].uncertain);
+
+    result.observations.swap(1, 2);
+    assert!(result.scene_markers(&rule).is_empty());
+}
+
+#[test]
+fn slots_accept_equivalent_pixel_aspect_ratios() {
+    let mut result = analysis(
+        vec![frame(0, &[1, 2]), frame(100, &[2, 1])],
+        vec![
+            event(100, 1, ChangeKind::Move),
+            event(100, 2, ChangeKind::Move),
+        ],
+    );
+    result.observations[1].display.pixel_aspect_num = u32::MAX;
+    result.observations[1].display.pixel_aspect_den = u32::MAX;
+    let rule = rule(MarkerUnit::Slots, MarkerThreshold::All, &[ChangeKind::Move]);
+    assert_eq!(result.scene_markers(&rule)[0].changed_count, 2);
+}
+
+#[test]
+fn queries_respect_scan_gaps_resume_and_half_open_intersections() {
+    let mut result = analysis(vec![frame(0, &[1]), frame(100, &[1])], vec![]);
+    result.coverage[0].start = time(0);
+    result.coverage[0].end = time(50);
+    result.coverage.push(CoverageInterval {
+        start: time(75),
+        end: time(1000),
+        status: Coverage::Observed,
+    });
+    result.resume_at = Some(time(175));
+    result.appearances = vec![
+        Appearance {
+            id: 1,
+            participant_id: Some(1),
+            start: time(0),
+            end: time(175),
+        },
+        Appearance {
+            id: 2,
+            participant_id: Some(1),
+            start: time(20),
+            end: time(20),
+        },
+        Appearance {
+            id: 3,
+            participant_id: Some(1),
+            start: time(175),
+            end: time(225),
+        },
+    ];
+    assert_eq!(result.coverage_at(time(-1)), None);
+    assert_eq!(result.coverage_at(time(50)), None);
+    assert_eq!(result.coverage_at(time(75)), Some(Coverage::Observed));
+    assert!(result.visible_at(time(75)).is_none());
+    assert_eq!(result.visible_at(time(100)).unwrap().timestamp, time(100));
+    assert_eq!(result.coverage_at(time(175)), Some(Coverage::Incomplete));
+    assert!(result.visible_at(time(175)).is_none());
+    assert_eq!(result.coverage_at(time(1000)), None);
+    let ids: Vec<_> = result
+        .appearances_of(1, time(-200), time(1200))
+        .map(|a| a.id)
+        .collect();
+    assert_eq!(ids, [1]);
+    assert_eq!(result.appearances_of(1, time(175), time(200)).count(), 0);
+
+    result.start = Timestamp::new(0, 0, 1000);
+    assert_eq!(result.coverage_at(time(100)), None);
+    assert_eq!(result.appearances_of(1, time(0), time(200)).count(), 0);
+}

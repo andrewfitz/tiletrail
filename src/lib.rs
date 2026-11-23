@@ -114,7 +114,9 @@ impl Analyzer {
 
     /// Produce a versioned snapshot ending at the exclusive scan end. Following
     /// a failed submission, the result reports incomplete coverage from the
-    /// first uncommitted frame. The analyzer may continue accepting input.
+    /// first uncommitted frame. The end may equal that timestamp, in which case
+    /// the snapshot retains the resume point without an incomplete tail.
+    /// The analyzer may continue accepting input.
     pub fn finish(&self, end: Timestamp) -> Result<AnalysisResult, AnalysisError> {
         if !self.start.before(end)
             || self
@@ -215,10 +217,9 @@ fn append_coverage(
     if !start.before(end) {
         return;
     }
-    if let Some(previous) = intervals
-        .last_mut()
-        .filter(|interval| interval.status == status)
-    {
+    if let Some(previous) = intervals.last_mut().filter(|interval| {
+        interval.status == status && interval.end.compare(start) == Some(std::cmp::Ordering::Equal)
+    }) {
         previous.end = end;
     } else {
         intervals.push(CoverageInterval { start, end, status });
@@ -380,5 +381,54 @@ mod tests {
         assert!(result.visible_at(time(0)).is_none());
         assert_eq!(result.appearances[0].end, time(0));
         assert!(result.events.is_empty());
+    }
+
+    #[test]
+    fn snapshot_at_uncommitted_boundary_round_trips_exact_times() {
+        let start = Timestamp::new(i64::MIN, u32::MAX, u32::MAX);
+        let failed = Timestamp::new(i64::MAX - 1, u32::MAX, u32::MAX);
+        let end = Timestamp::new(i64::MAX - 1, 1, 1);
+        let mut analyzer = Analyzer::new(
+            AnalyzerConfig {
+                mode: BackendMode::CpuOnly,
+                ..Default::default()
+            },
+            start,
+        )
+        .unwrap();
+        let data = gallery(false);
+        analyzer
+            .push(Frame {
+                timestamp: start,
+                ..frame(&data, 0)
+            })
+            .unwrap();
+        analyzer
+            .push(Frame {
+                timestamp: failed,
+                ..frame(&[], 0)
+            })
+            .unwrap_err();
+
+        let snapshot = analyzer.finish(end).unwrap();
+        let json = serde_json::to_vec(&snapshot).unwrap();
+        let restored: AnalysisResult = serde_json::from_slice(&json).unwrap();
+        assert_eq!(restored.start, start);
+        assert_eq!(restored.end, end);
+        assert_eq!(restored.resume_at, Some(failed));
+        assert_eq!(restored.coverage.len(), 1);
+        assert_eq!(restored.coverage_at(start), Some(Coverage::Observed));
+        assert_eq!(restored.coverage_at(failed), None);
+
+        analyzer
+            .push(Frame {
+                timestamp: end,
+                ..frame(&data, 0)
+            })
+            .unwrap();
+        let resumed = analyzer.finish(Timestamp::new(i64::MAX, 1, 1)).unwrap();
+        assert_eq!(resumed.resume_at, None);
+        assert_eq!(resumed.observations.len(), 2);
+        assert_eq!(resumed.coverage_at(failed), Some(Coverage::Observed));
     }
 }

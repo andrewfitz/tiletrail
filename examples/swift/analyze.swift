@@ -24,17 +24,19 @@ func run(_ args: [String]) throws {
           let width = UInt32(args[2]), width > 0,
           let height = UInt32(args[3]), height > 0,
           let start = Int64(args[4]),
-          let numerator = UInt32(args[5]), let denominator = UInt32(args[6]) else {
+          let numerator = UInt32(args[5]), numerator > 0,
+          let denominator = UInt32(args[6]), denominator > 0 else {
         throw AnalysisFailure.input
     }
 
-    let stride = Int(width) * 3
-    let (frameLength, frameOverflow) = stride.multipliedReportingOverflow(by: Int(height))
-    guard !frameOverflow else { throw AnalysisFailure.input }
-    let bytes = try Data(contentsOf: URL(fileURLWithPath: args[1]))
-    guard !bytes.isEmpty, bytes.count.isMultiple(of: frameLength) else {
+    guard let widthInt = Int(exactly: width), let heightInt = Int(exactly: height) else {
         throw AnalysisFailure.input
     }
+    let (stride, strideOverflow) = widthInt.multipliedReportingOverflow(by: 3)
+    let (frameLength, frameOverflow) = stride.multipliedReportingOverflow(by: heightInt)
+    guard !strideOverflow, !frameOverflow else { throw AnalysisFailure.input }
+    let stream = try FileHandle(forReadingFrom: URL(fileURLWithPath: args[1]))
+    defer { try? stream.close() }
     var time = tiletrail_timestamp_t(pts: start, numerator: numerator, denominator: denominator)
     var options = tiletrail_config_t(mode: UInt32(TILETRAIL_MODE_CPU_ONLY),
                                      sampling: UInt32(TILETRAIL_SAMPLING_EVERY_FRAME))
@@ -42,25 +44,34 @@ func run(_ args: [String]) throws {
     var error = tiletrail_error_t()
     try check(tiletrail_analyzer_create(&options, time, &analyzer, &error), &error)
     defer { tiletrail_analyzer_free(analyzer) }
-    try bytes.withUnsafeBytes { input in
-        for offset in Swift.stride(from: 0, to: bytes.count, by: frameLength) {
-            guard time.pts < Int64.max else { throw AnalysisFailure.input }
-            let pixels = input.baseAddress!.assumingMemoryBound(to: UInt8.self)
-            var frame = tiletrail_frame_t(data: pixels.advanced(by: offset),
-                                          len: UInt64(frameLength), stride: UInt64(stride),
-                                          width: width, height: height,
-                                          format: UInt32(TILETRAIL_FORMAT_RGB24), rotation: 0,
-                                          pixel_aspect_num: 1, pixel_aspect_den: 1, timestamp: time)
-            try check(tiletrail_analyzer_push(analyzer, &frame, &error), &error)
-            time.pts += 1
+    let chunkLength = 1024 * 1024
+    while var bytes = try stream.read(upToCount: min(chunkLength, frameLength)), !bytes.isEmpty {
+        guard time.pts < Int64.max else { throw AnalysisFailure.input }
+        while bytes.count < frameLength {
+            guard let chunk = try stream.read(upToCount: min(chunkLength, frameLength - bytes.count)),
+                  !chunk.isEmpty else {
+                throw AnalysisFailure.input
+            }
+            bytes.append(chunk)
         }
+        try bytes.withUnsafeBytes { input in
+            var frame = tiletrail_frame_t(data: input.bindMemory(to: UInt8.self).baseAddress,
+                                         len: UInt64(frameLength), stride: UInt64(stride),
+                                         width: width, height: height,
+                                         format: UInt32(TILETRAIL_FORMAT_RGB24), rotation: 0,
+                                         pixel_aspect_num: 1, pixel_aspect_den: 1, timestamp: time)
+            try check(tiletrail_analyzer_push(analyzer, &frame, &error), &error)
+        }
+        time.pts += 1
     }
 
     var output = tiletrail_buffer_t()
     defer { tiletrail_buffer_free(&output) }
     try check(tiletrail_analyzer_result_json(analyzer, time, &output, &error), &error)
-    guard let data = output.data else { throw AnalysisFailure.abi }
-    FileHandle.standardOutput.write(Data(bytes: data, count: Int(output.len)))
+    guard let data = output.data, let count = Int(exactly: output.len) else {
+        throw AnalysisFailure.abi
+    }
+    try FileHandle.standardOutput.write(contentsOf: Data(bytes: data, count: count))
 }
 
 do {

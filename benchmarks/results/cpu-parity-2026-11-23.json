@@ -1,0 +1,42 @@
+{
+  "interview": {
+    "before": {
+      "analysis_sha256": "85a298b28d6a1b8e1dcc044d7d1e0686dd83d031d22f134ac12662b41f43c076",
+      "score_sha256": "ad11fb3e82f210fe6cd5ed13c67429013213dc1ce684ec3209967cf0270b9fe5"
+    },
+    "after": {
+      "analysis_sha256": "85a298b28d6a1b8e1dcc044d7d1e0686dd83d031d22f134ac12662b41f43c076",
+      "score_sha256": "ad11fb3e82f210fe6cd5ed13c67429013213dc1ce684ec3209967cf0270b9fe5"
+    }
+  },
+  "gallery": {
+    "before": {
+      "analysis_sha256": "4fe4d13bf5347bdb94f3f467fcb3db1615d6c9edab07fb633cd50f6afbf9d09f",
+      "score_sha256": "2ac9565b727ae05d90efb4d9588fb5661687c5c3fe0bc494239a681c2e3f8519"
+    },
+    "after": {
+      "analysis_sha256": "4fe4d13bf5347bdb94f3f467fcb3db1615d6c9edab07fb633cd50f6afbf9d09f",
+      "score_sha256": "2ac9565b727ae05d90efb4d9588fb5661687c5c3fe0bc494239a681c2e3f8519"
+    }
+  },
+  "stage_and_share": {
+    "before": {
+      "analysis_sha256": "eebfc71c5df2158e88131895a1aacc3d56adb93d7f0f2b13002742f8357f6a8c",
+      "score_sha256": "36998e010ee2dc4e5cc05b4f5a0da30bed0286540c668cd1e60df7ac4f431719"
+    },
+    "after": {
+      "analysis_sha256": "eebfc71c5df2158e88131895a1aacc3d56adb93d7f0f2b13002742f8357f6a8c",
+      "score_sha256": "36998e010ee2dc4e5cc05b4f5a0da30bed0286540c668cd1e60df7ac4f431719"
+    }
+  },
+  "speech_control": {
+    "before": {
+      "analysis_sha256": "9c041d53c181907f6eee6cd37e9c0f1149625e62aa823d0f7a624156d25e6d64",
+      "score_sha256": "f5d4de342428461e7dfda7de59ad0512b2c39811ab10e869da672a1b6f6774a1"
+    },
+    "after": {
+      "analysis_sha256": "9c041d53c181907f6eee6cd37e9c0f1149625e62aa823d0f7a624156d25e6d64",
+      "score_sha256": "f5d4de342428461e7dfda7de59ad0512b2c39811ab10e869da672a1b6f6774a1"
+    }
+  }
+}

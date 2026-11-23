@@ -76,7 +76,7 @@ impl BackendSession {
         &mut self,
         frame: &Frame<'_>,
     ) -> Result<vision::Measurements, AnalysisError> {
-        let result: Result<_, AnalysisError> = match &self.engine {
+        let result: Result<_, AnalysisError> = match &mut self.engine {
             Engine::Cpu => Ok(vision::measure(frame)),
             #[cfg(feature = "gpu")]
             Engine::Gpu(gpu) => gpu.measure(frame).map_err(|(kind, message)| AnalysisError {
@@ -257,6 +257,22 @@ mod tests {
             ..frame
         };
         assert_eq!(required.measure(&later).err().unwrap().resume_at, next);
+
+        let mut readback = BackendSession::new(BackendMode::Auto, start).unwrap();
+        let Engine::Gpu(device) = &mut readback.engine else {
+            unreachable!()
+        };
+        device.panic_on_readback = true;
+        assert_eq!(readback.measure(&frame).unwrap().pixels, [[99, 99, 99]]);
+        assert_eq!(readback.backend(), Backend::Cpu);
+        assert_eq!(readback.diagnostics()[1].timestamp, next);
+        assert!(
+            readback.diagnostics()[1]
+                .reason
+                .as_ref()
+                .unwrap()
+                .contains("injected GPU readback panic")
+        );
     }
 
     #[test]

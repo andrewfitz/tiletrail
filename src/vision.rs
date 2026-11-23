@@ -199,10 +199,15 @@ fn matte_line(
     cross_start: usize,
     cross_end: usize,
 ) -> bool {
-    let count = (cross_start..cross_end)
-        .filter(|&i| color_gap(image.at_line(horizontal, line, i), matte) <= 9)
-        .count();
-    count * 100 >= (cross_end - cross_start) * 96
+    let max_outside = (cross_end - cross_start) * 4 / 100;
+    let mut outside = 0;
+    for i in cross_start..cross_end {
+        outside += usize::from(color_gap(image.at_line(horizontal, line, i), matte) > 9);
+        if outside > max_outside {
+            return false;
+        }
+    }
+    true
 }
 
 fn trim_matte(image: &Measurements, mut bounds: Bounds, matte: [u8; 3]) -> Bounds {
@@ -279,9 +284,11 @@ fn best_split(image: &Measurements, bounds: Bounds, matte: Option<[u8; 3]>) -> O
                     let b = image.at_line(horizontal, line, i);
                     let gap = color_gap(a, b);
                     support += usize::from(gap >= 22);
-                    let nearby = color_gap(a, image.at_line(horizontal, line - 2, i))
-                        .max(color_gap(b, image.at_line(horizontal, line + 1, i)));
-                    salient += usize::from(gap >= 26 && gap.saturating_sub(nearby) >= 12);
+                    if gap >= 26 {
+                        let nearby = color_gap(a, image.at_line(horizontal, line - 2, i))
+                            .max(color_gap(b, image.at_line(horizontal, line + 1, i)));
+                        salient += usize::from(gap.saturating_sub(nearby) >= 12);
+                    }
                 }
                 let length = (cross_end - cross_start) as f32;
                 if support as f32 / length < 0.76 {
@@ -310,30 +317,52 @@ fn best_split(image: &Measurements, bounds: Bounds, matte: Option<[u8; 3]>) -> O
 }
 
 fn describe(image: &Measurements, bounds: Bounds) -> (Vec<f32>, TileKind, bool) {
-    let width = bounds.right - bounds.left;
-    let height = bounds.bottom - bounds.top;
+    let stored_width = bounds.right - bounds.left;
+    let stored_height = bounds.bottom - bounds.top;
+    let (width, height) = match image.rotation {
+        Rotation::R0 | Rotation::R180 => (stored_width, stored_height),
+        Rotation::R90 | Rotation::R270 => (stored_height, stored_width),
+    };
+    let display_pixel = |x, y| {
+        let (x, y) = match image.rotation {
+            Rotation::R0 => (x, y),
+            Rotation::R90 => (y, stored_height - 1 - x),
+            Rotation::R180 => (stored_width - 1 - x, stored_height - 1 - y),
+            Rotation::R270 => (stored_width - 1 - y, x),
+        };
+        image.at(bounds.left + x, bounds.top + y)
+    };
     let mut descriptor = Vec::with_capacity(DESCRIPTOR_VALUES);
     let mut histogram = [[0_u32; HISTOGRAM_BINS]; 3];
     let mut neutral = 0;
     let mut bright_neutral = 0;
     for grid_y in 0..GRID_SIZE {
-        let top = bounds.top + grid_y * height / GRID_SIZE;
-        let bottom = (bounds.top + (grid_y + 1) * height / GRID_SIZE).max(top + 1);
+        let top = grid_y * height / GRID_SIZE;
+        let bottom = (grid_y + 1) * height / GRID_SIZE;
         for grid_x in 0..GRID_SIZE {
-            let left = bounds.left + grid_x * width / GRID_SIZE;
-            let right = (bounds.left + (grid_x + 1) * width / GRID_SIZE).max(left + 1);
+            let left = grid_x * width / GRID_SIZE;
+            let right = (grid_x + 1) * width / GRID_SIZE;
+            // Tiny tiles have empty grid cells. Reuse nearby pixels for the
+            // grid descriptor without counting them again in the histogram.
+            let has_pixels = left < right && top < bottom;
+            let right = right.max(left + 1);
+            let bottom = bottom.max(top + 1);
             let mut sum = [0_u32; 3];
             for y in top..bottom {
                 for x in left..right {
-                    let pixel = image.at(x, y);
+                    let pixel = display_pixel(x, y);
                     for channel in 0..3 {
                         sum[channel] += u32::from(pixel[channel]);
-                        histogram[channel][usize::from(pixel[channel]) / 32] += 1;
+                        if has_pixels {
+                            histogram[channel][usize::from(pixel[channel]) / 32] += 1;
+                        }
                     }
-                    let max = *pixel.iter().max().unwrap();
-                    let min = *pixel.iter().min().unwrap();
-                    neutral += usize::from(max - min <= 12);
-                    bright_neutral += usize::from(min >= 180 && max - min <= 20);
+                    if has_pixels {
+                        let max = *pixel.iter().max().unwrap();
+                        let min = *pixel.iter().min().unwrap();
+                        neutral += usize::from(max - min <= 12);
+                        bright_neutral += usize::from(min >= 180 && max - min <= 20);
+                    }
                 }
             }
             descriptor.extend(
@@ -341,7 +370,7 @@ fn describe(image: &Measurements, bounds: Bounds) -> (Vec<f32>, TileKind, bool) 
             );
         }
     }
-    let histogram_size: u32 = histogram[0].iter().sum();
+    let histogram_size = bounds.area() as u32;
     let flat = histogram.iter().all(|bins| {
         bins.windows(2)
             .any(|pair| (pair[0] + pair[1]) * 100 >= histogram_size * 88)
@@ -627,6 +656,68 @@ mod tests {
         assert!(
             appearance_distance(&before.tiles[0].descriptor, &after.tiles[0].descriptor) < 0.10
         );
+    }
+
+    #[test]
+    fn display_orientation_preserves_descriptors_for_asymmetric_tiles() {
+        let width = 13;
+        let height = 9;
+        let mut upright = Measurements {
+            width,
+            height,
+            pixels: Vec::new(),
+            rotation: Rotation::R0,
+        };
+        for y in 0..height {
+            for x in 0..width {
+                upright.pixels.push([(x * 19) as u8, (y * 29) as u8, 100]);
+            }
+        }
+        let expected = detect(&upright);
+        for rotation in [Rotation::R90, Rotation::R180, Rotation::R270] {
+            let (stored_width, stored_height) = match rotation {
+                Rotation::R90 | Rotation::R270 => (height, width),
+                _ => (width, height),
+            };
+            let mut rotated = Measurements {
+                width: stored_width,
+                height: stored_height,
+                pixels: Vec::new(),
+                rotation,
+            };
+            for y in 0..stored_height {
+                for x in 0..stored_width {
+                    let (display_x, display_y) = match rotation {
+                        Rotation::R90 => (stored_height - 1 - y, x),
+                        Rotation::R180 => (stored_width - 1 - x, stored_height - 1 - y),
+                        Rotation::R270 => (y, stored_width - 1 - x),
+                        Rotation::R0 => unreachable!(),
+                    };
+                    rotated
+                        .pixels
+                        .push(upright.at(display_x as usize, display_y as usize));
+                }
+            }
+            let result = detect(&rotated);
+            assert_eq!(result.tiles.len(), 1);
+            assert_eq!(result.tiles[0].rect, expected.tiles[0].rect);
+            assert_eq!(result.tiles[0].descriptor, expected.tiles[0].descriptor);
+        }
+    }
+
+    #[test]
+    fn tiny_tile_histogram_counts_each_pixel_once() {
+        let image = Measurements {
+            width: 3,
+            height: 1,
+            pixels: vec![[150; 3], [190; 3], [190; 3]],
+            rotation: Rotation::R0,
+        };
+        let result = detect(&image);
+        assert_eq!(result.tiles[0].kind, TileKind::Video);
+        let histogram = &result.tiles[0].descriptor[GRID_VALUES..];
+        assert_eq!(histogram[150 / 32], 1.0 / 3.0);
+        assert_eq!(histogram[190 / 32], 2.0 / 3.0);
     }
 
     #[test]

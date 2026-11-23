@@ -54,16 +54,42 @@ impl AnalysisResult {
         let Some(baseline) = self.observations.first() else {
             return Vec::new();
         };
-        let events: Vec<_> = self
+        if self
+            .observations
+            .iter()
+            .any(|frame| !self.in_committed_range(frame.timestamp))
+            || self
+                .observations
+                .windows(2)
+                .any(|frames| !frames[0].timestamp.before(frames[1].timestamp))
+        {
+            return Vec::new();
+        }
+        let mut events: Vec<_> = self
             .events
             .iter()
             .filter(|event| {
                 baseline.timestamp.before(event.timestamp)
-                    && event.timestamp.before(self.end)
                     && rule.kinds.contains(&event.kind)
                     && selected(event.participant_id)
+                    && self.in_committed_range(event.timestamp)
+                    && self.coverage_at(event.timestamp) != Some(Coverage::Incomplete)
+                    && self
+                        .observations
+                        .binary_search_by(|frame| {
+                            frame
+                                .timestamp
+                                .compare(event.timestamp)
+                                .expect("validated timestamps")
+                        })
+                        .is_ok()
             })
             .collect();
+        events.sort_by(|a, b| {
+            a.timestamp
+                .compare(b.timestamp)
+                .expect("validated timestamps")
+        });
 
         let mut markers = Vec::new();
         let mut pending = events.as_slice();
@@ -131,14 +157,19 @@ impl AnalysisResult {
                     eligible_count,
                     uncertain: group.iter().any(|event| event.uncertain)
                         || self.marker_coverage_uncertain(before.timestamp, end_timestamp)
-                        || before.regions.iter().chain(&after.regions).any(|region| {
-                            region.identity_uncertain
-                                && (participant(region).is_some_and(selected)
-                                    || region
-                                        .possible_matches
-                                        .iter()
-                                        .any(|candidate| selected(candidate.participant_id)))
-                        }),
+                        || frames
+                            .iter()
+                            .flat_map(|frame| &frame.regions)
+                            .any(|region| {
+                                region.kind != TileKind::ScreenShare
+                                    && region.identity_uncertain
+                                    && (roster.is_none()
+                                        || participant(region).is_some_and(selected)
+                                        || region
+                                            .possible_matches
+                                            .iter()
+                                            .any(|candidate| selected(candidate.participant_id)))
+                            }),
                     participant_ids: participant_ids.into_iter().collect(),
                 });
             }
@@ -155,10 +186,20 @@ impl AnalysisResult {
             .iter()
             .take_while(|interval| !through.before(interval.start))
         {
-            if covered_until.before(interval.start) || interval.status != Coverage::Observed {
+            if interval
+                .start
+                .compare(covered_until)
+                .is_none_or(|cmp| cmp.is_gt())
+                || !interval.start.before(interval.end)
+                || !covered_until.before(interval.end)
+                || interval.status != Coverage::Observed
+            {
                 return true;
             }
             covered_until = interval.end;
+            if through.before(covered_until) {
+                return false;
+            }
         }
         !through.before(covered_until)
     }
@@ -175,12 +216,9 @@ fn participant(region: &RegionObservation) -> Option<ParticipantId> {
 }
 
 fn within_window(first: Timestamp, next: Timestamp, window_ms: u32) -> bool {
-    let left = i128::from(first.pts)
-        * i128::from(first.time_base.numerator)
-        * i128::from(next.time_base.denominator);
-    let right = i128::from(next.pts)
-        * i128::from(next.time_base.numerator)
-        * i128::from(first.time_base.denominator);
+    let Some((left, right)) = first.common_clock(next) else {
+        return false;
+    };
     let limit = i128::from(window_ms)
         * i128::from(first.time_base.denominator)
         * i128::from(next.time_base.denominator)
@@ -195,7 +233,16 @@ fn comparable_regions<'a>(
     baseline: &FrameObservation,
     frame: &'a FrameObservation,
 ) -> Option<Vec<&'a RegionObservation>> {
-    if baseline.display != frame.display || baseline.regions.len() != frame.regions.len() {
+    let a = baseline.display;
+    let b = frame.display;
+    let equivalent_display = a.rotation == b.rotation
+        && a.pixel_aspect_num != 0
+        && a.pixel_aspect_den != 0
+        && b.pixel_aspect_num != 0
+        && b.pixel_aspect_den != 0
+        && u64::from(a.pixel_aspect_num) * u64::from(b.pixel_aspect_den)
+            == u64::from(b.pixel_aspect_num) * u64::from(a.pixel_aspect_den);
+    if !equivalent_display || baseline.regions.len() != frame.regions.len() {
         return None;
     }
     let mut used = BTreeSet::new();

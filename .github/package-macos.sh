@@ -24,8 +24,8 @@ cp examples/c/analyze.c examples/swift/analyze.swift "$install/"
   cc -std=c11 -Wall -Wextra -Werror -I"$prefix/include" analyze.c \
     -L"$prefix/lib" -ltiletrail -Wl,-rpath,"$prefix/lib" -o analyze-c
   swiftc -I "$prefix/include" analyze.swift "$prefix/lib/libtiletrail.a" \
-    -framework Foundation -framework QuartzCore -framework Metal -lSystem \
-    -framework CoreGraphics -framework CoreFoundation -lobjc -liconv -lSystem -lc -lm \
+    -framework Foundation -framework QuartzCore -framework Metal \
+    -framework CoreGraphics -framework CoreFoundation -lobjc -liconv -lc -lm \
     -o analyze-swift
   fixture=$root/target/ffi-gallery/gallery.rgb
   ./analyze-c "$fixture" 960 540 0 1 10 > c.json

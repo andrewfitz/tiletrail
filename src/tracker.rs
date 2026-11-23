@@ -67,7 +67,7 @@ impl Tracker {
             kuhn_munkres(&weights)
         };
 
-        let decisions: Vec<_> = matches
+        let mut decisions: Vec<_> = matches
             .iter()
             .enumerate()
             .map(|(row, &column)| {
@@ -117,6 +117,8 @@ impl Tracker {
                 }
             })
             .collect();
+
+        review_placeholders(&tiles, &candidates, active_count, &mut decisions);
 
         let mut next = Vec::with_capacity(tiles.len());
         let mut regions = Vec::with_capacity(tiles.len());
@@ -286,7 +288,9 @@ impl Tracker {
                 {
                     emit(
                         ChangeKind::Leave,
-                        uncertain || prior.uncertain || next.iter().any(|sample| sample.uncertain),
+                        uncertain
+                            || prior.uncertain
+                            || next.iter().any(|sample| could_be(sample, participant_id)),
                     );
                 }
                 continue;
@@ -329,7 +333,12 @@ impl Tracker {
                     participant_id,
                     appearance_id: current.appearance,
                     kind: ChangeKind::Enter,
-                    uncertain: uncertain || current.uncertain,
+                    uncertain: uncertain
+                        || current.uncertain
+                        || self
+                            .active
+                            .iter()
+                            .any(|sample| could_be(sample, participant_id)),
                 });
             }
         }
@@ -375,6 +384,79 @@ impl Tracker {
     }
 }
 
+fn could_be(sample: &Sample, participant: ParticipantId) -> bool {
+    sample.uncertain
+        && (sample.tile.kind == TileKind::Unknown
+            || sample
+                .alternatives
+                .iter()
+                .any(|option| option.participant_id == participant))
+}
+
+/// A camera-off card provides no visual link to a missing video. Across a
+/// reflow, the previously unseen card could represent any absent participant.
+/// Exclude feeds that were actually recognized elsewhere in the frame.
+fn review_placeholders(
+    tiles: &[Tile],
+    candidates: &[&Sample],
+    active_count: usize,
+    decisions: &mut [Decision],
+) {
+    if !tiles.iter().any(|tile| tile.kind == TileKind::CameraOff) {
+        return;
+    }
+    let mut visible = std::collections::BTreeSet::new();
+    let mut reflow = false;
+    for (tile, decision) in tiles.iter().zip(decisions.iter()) {
+        if tile.kind != TileKind::Video {
+            continue;
+        }
+        if let Some(index) = decision.matched {
+            let prior = candidates[index];
+            if !prior.uncertain {
+                visible.extend(prior.participant);
+                reflow |= index < active_count && prior.tile.rect.overlap(tile.rect) < 0.5;
+            }
+        }
+    }
+
+    for (tile, decision) in tiles.iter().zip(decisions) {
+        if tile.kind != TileKind::CameraOff || (decision.matched.is_some() && !reflow) {
+            continue;
+        }
+        // A provisional card remaining in its slot already carries its alternatives.
+        if decision.matched.is_some_and(|i| candidates[i].uncertain) {
+            continue;
+        }
+        let mut options = BTreeMap::new();
+        for candidate in candidates {
+            if let Some(id) = candidate.participant.filter(|id| !visible.contains(id)) {
+                // Equal, review-only prior for visually indistinguishable possibilities.
+                options.insert(id, (REVIEW_MATCH + 1) as f32 / 1000.0);
+            }
+        }
+        if !options.is_empty() && (decision.matched.is_none() || options.len() > 1) {
+            for entry in &decision.possible {
+                if let Some(confidence) = options.get_mut(&entry.participant_id) {
+                    *confidence = confidence.max(entry.confidence);
+                }
+            }
+            decision.possible = options
+                .into_iter()
+                .map(|(participant_id, confidence)| IdentityMatch {
+                    participant_id,
+                    confidence,
+                })
+                .collect();
+            decision
+                .possible
+                .sort_by(|a, b| b.confidence.total_cmp(&a.confidence));
+            decision.matched = None;
+            decision.ambiguous = true;
+        }
+    }
+}
+
 fn score(tile: &Tile, candidate: &Sample, active: bool) -> i32 {
     let prior = &candidate.tile;
     let spatial = tile.rect.overlap(prior.rect);
@@ -393,9 +475,14 @@ fn score(tile: &Tile, candidate: &Sample, active: bool) -> i32 {
             } else {
                 0.76 * appearance
             };
-            if confidence * 1000.0 > UNMATCHED as f32 {
-                return (confidence * 1000.0) as i32;
-            }
+            let remembered_score = (confidence * 1000.0) as i32;
+            // A slot can suggest continuity after the camera comes back on,
+            // but conflicting remembered video makes it a review candidate.
+            return if remembered_score <= UNMATCHED && active && spatial >= 0.9 {
+                UNMATCHED
+            } else {
+                remembered_score
+            };
         }
     }
     if tile.kind == TileKind::Unknown || prior.kind == TileKind::Unknown {
@@ -577,6 +664,38 @@ mod tests {
                 ChangeKind::Leave,
                 ChangeKind::Enter
             ]
+        );
+    }
+
+    #[test]
+    fn conflicting_video_after_camera_off_keeps_prior_identity_as_candidate() {
+        let mut tracker = Tracker::default();
+        let alice = tile(0.0, 0.0, 0.4, 0.1);
+        let mut off = alice.clone();
+        off.kind = TileKind::CameraOff;
+        let different_feed = tile(0.0, 0.0, 0.4, 0.85);
+        push(&mut tracker, 0, vec![alice]);
+        push(&mut tracker, 1, vec![off]);
+        push(&mut tracker, 2, vec![different_feed]);
+        let current = &tracker.observations[2].regions[0];
+        assert_ne!(current.participant_id, Some(1));
+        assert!(current.identity_uncertain);
+        assert!(current.identity_confidence.is_none());
+        assert!(
+            current
+                .possible_matches
+                .iter()
+                .any(|option| option.participant_id == 1)
+        );
+        let transition: Vec<_> = tracker
+            .events
+            .iter()
+            .filter(|event| event.timestamp == Timestamp::new(2, 1, 30))
+            .map(|event| (event.kind, event.uncertain))
+            .collect();
+        assert_eq!(
+            transition,
+            [(ChangeKind::Leave, true), (ChangeKind::Enter, true)]
         );
     }
 

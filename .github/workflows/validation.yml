@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   portable:
-    name: Rust and C on ${{ matrix.os }}
+    name: Rust, C and Python on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -52,7 +52,7 @@ jobs:
         shell: cmd
         run: |
           for /f "usebackq delims=" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do call "%%i\VC\Auxiliary\Build\vcvars64.bat"
-          cl /nologo /std:c11 /W4 /WX /D_CRT_SECURE_NO_WARNINGS /Iinclude examples\c\analyze.c target\release\tiletrail.dll.lib /Fetarget\ffi-gallery\analyze.exe
+          cl /nologo /std:c11 /W4 /WX /D_CRT_SECURE_NO_WARNINGS /Iinclude examples\c\analyze.c target\release\tiletrail.dll.lib /Fotarget\ffi-gallery\analyze.obj /Fetarget\ffi-gallery\analyze.exe
           if errorlevel 1 exit /b 1
           set "PATH=%CD%\target\release;%PATH%"
           target\ffi-gallery\analyze.exe target\ffi-gallery\gallery.rgb 960 540 0 1 10 > target\ffi-gallery\c.json

@@ -1,6 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "TileTrail analysis v1",
+  "description": "Times are exact rational presentation timestamps. The scan range is half-open [start, end).",
   "type": "object",
   "properties": {
     "schema_version": {
@@ -20,6 +21,7 @@
     },
     "observations": {
       "type": "array",
+      "description": "Committed frame observations in strictly increasing presentation order within the scan range and before resume_at when present.",
       "items": {
         "$ref": "#/$defs/observation"
       }
@@ -38,12 +40,15 @@
     },
     "events": {
       "type": "array",
+      "description": "Changes in presentation order. Each timestamp corresponds to a committed observation. Multiple events may share a timestamp.",
       "items": {
         "$ref": "#/$defs/event"
       }
     },
     "coverage": {
       "type": "array",
+      "description": "Nonempty, consecutive half-open intervals partitioning the scan range in presentation order.",
+      "minItems": 1,
       "items": {
         "$ref": "#/$defs/coverage"
       }
@@ -55,6 +60,7 @@
       }
     },
     "resume_at": {
+      "description": "The first uncommitted frame after a submission failure, or null. Any scan time at or after this timestamp has incomplete coverage.",
       "anyOf": [
         {
           "$ref": "#/$defs/timestamp"
@@ -321,6 +327,7 @@
     },
     "appearance": {
       "type": "object",
+      "description": "An appearance in a nonempty half-open presentation interval within the committed portion of the scan.",
       "properties": {
         "id": {
           "type": "integer",

@@ -86,7 +86,7 @@ struct AnalyzerHandle {
     panicked: bool,
 }
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 struct Failure {
     code: i32,
     resume_at: Option<Timestamp>,
@@ -373,6 +373,111 @@ unsafe extern "C" fn tiletrail_buffer_free(buffer: *mut CBuffer) {
         if !owned.data.is_null() {
             let data = ptr::slice_from_raw_parts_mut(owned.data.cast_mut(), owned.len as usize);
             catch(|| unsafe { drop(Box::from_raw(data)) });
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn invalid_create_clears_output_and_reports_exact_resume() {
+        let mut out = ptr::dangling_mut();
+        let mut error = Failure::default().to_error();
+        let start = CTime {
+            pts: -27,
+            numerator: 1,
+            denominator: 0,
+        };
+        assert_eq!(
+            unsafe { tiletrail_analyzer_create(ptr::null(), start, &mut out, &mut error) },
+            2,
+        );
+        assert!(out.is_null());
+        assert_eq!(error.code, 2);
+        assert_eq!(error.has_resume, 1);
+        assert_eq!(Timestamp::from(error.resume_at), Timestamp::from(start));
+        assert_ne!(error.message[0], 0);
+        assert_eq!(error.message[255], 0);
+    }
+
+    #[test]
+    fn snapshots_survive_replay_and_analyzer_release() {
+        let config = CConfig {
+            mode: 1,
+            sampling: 0,
+        };
+        let start = CTime::from(Timestamp::new(-5, 1001, 30_000));
+        let end = CTime::from(Timestamp::new(-4, 1001, 30_000));
+        let mut analyzer = ptr::null_mut();
+        let mut error = Failure::default().to_error();
+        let mut partial = CBuffer::EMPTY;
+        let mut complete = CBuffer::EMPTY;
+        let data = Box::new([127]);
+        let mut frame = CFrame {
+            data: data.as_ptr(),
+            len: 0,
+            stride: 1,
+            width: 1,
+            height: 1,
+            format: 0,
+            rotation: 0,
+            pixel_aspect_num: 1,
+            pixel_aspect_den: 1,
+            timestamp: start,
+        };
+        unsafe {
+            assert_eq!(
+                tiletrail_analyzer_create(&config, start, &mut analyzer, &mut error),
+                0
+            );
+            assert_eq!(tiletrail_analyzer_push(analyzer, &frame, &mut error), 1);
+            assert_eq!(error.has_resume, 1);
+            assert_eq!(Timestamp::from(error.resume_at), Timestamp::from(start));
+            assert_eq!(
+                tiletrail_analyzer_result_json(analyzer, end, &mut partial, &mut error),
+                0
+            );
+            assert_eq!(error.code, 0);
+            assert_eq!(error.has_resume, 0);
+            assert_eq!(error.message[0], 0);
+            frame.len = 1;
+            assert_eq!(tiletrail_analyzer_push(analyzer, &frame, &mut error), 0);
+            drop(data);
+            assert_eq!(
+                tiletrail_analyzer_result_json(analyzer, end, &mut complete, &mut error),
+                0
+            );
+            tiletrail_analyzer_free(analyzer);
+
+            let first: AnalysisResult = parse_json(partial.data, partial.len).unwrap();
+            let second: AnalysisResult = parse_json(complete.data, complete.len).unwrap();
+            assert_eq!(first.resume_at, Some(Timestamp::from(start)));
+            assert!(first.observations.is_empty());
+            assert_eq!(second.resume_at, None);
+            assert_eq!(second.observations.len(), 1);
+
+            let mut markers = CBuffer::EMPTY;
+            let invalid_rule = b"{}";
+            assert_eq!(
+                tiletrail_scene_markers_json(
+                    complete.data,
+                    complete.len,
+                    invalid_rule.as_ptr(),
+                    invalid_rule.len() as u64,
+                    &mut markers,
+                    &mut error,
+                ),
+                6,
+            );
+            assert!(markers.data.is_null());
+            assert_eq!(markers.len, 0);
+            tiletrail_buffer_free(&mut partial);
+            tiletrail_buffer_free(&mut complete);
+            tiletrail_buffer_free(&mut complete);
+            assert!(complete.data.is_null());
+            assert_eq!(complete.len, 0);
         }
     }
 }

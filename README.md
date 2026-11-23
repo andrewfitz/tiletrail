@@ -39,4 +39,6 @@ cargo test --locked --features gpu
 cargo build --locked --release --features gpu
 ```
 
-TileTrail is distributed under the [MIT license](LICENSE).
+For linked C, Swift and Python examples, see the [C consumer guide](examples/c/README.md). The [gallery benchmarks](benchmarks/README.md) measure geometry, identity, event timing and process memory. The [real-recording validation set](validation/real/README.md) includes attributed video excerpts and the procedure for scoring them.
+
+The library is distributed under the [MIT license](LICENSE). The real recording excerpts carry their own licenses, documented with the clips.

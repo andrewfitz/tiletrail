@@ -46,10 +46,14 @@ class Buffer(c.Structure):
 
 def load_library(path):
     library = c.CDLL(str(path.resolve()))
+    library.tiletrail_abi_version.restype = c.c_uint32
+    library.tiletrail_abi_version.argtypes = []
+    if library.tiletrail_abi_version() != 1:
+        raise RuntimeError("unsupported TileTrail C ABI version")
+
     analyzer = c.c_void_p
     error = c.POINTER(Error)
     signatures = {
-        "tiletrail_abi_version": (c.c_uint32, []),
         "tiletrail_analyzer_create": (
             c.c_int32,
             [c.POINTER(Config), Timestamp, c.POINTER(analyzer), error],
@@ -69,8 +73,6 @@ def load_library(path):
         function = getattr(library, name)
         function.restype = result
         function.argtypes = arguments
-    if library.tiletrail_abi_version() != 1:
-        raise RuntimeError("unsupported TileTrail C ABI version")
     return library
 
 

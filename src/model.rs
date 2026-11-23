@@ -32,16 +32,23 @@ impl Timestamp {
 
     /// Compare exact source times. Returns None for an invalid time base.
     pub fn compare(self, other: Self) -> Option<Ordering> {
+        let (left, right) = self.common_clock(other)?;
+        Some(left.cmp(&right))
+    }
+
+    pub(crate) fn common_clock(self, other: Self) -> Option<(i128, i128)> {
         if !self.is_valid() || !other.is_valid() {
             return None;
         }
+        // Each product has one signed 64-bit factor and two unsigned
+        // 32-bit factors, so both scaled values fit in i128.
         let left = i128::from(self.pts)
             * i128::from(self.time_base.numerator)
             * i128::from(other.time_base.denominator);
         let right = i128::from(other.pts)
             * i128::from(other.time_base.numerator)
             * i128::from(self.time_base.denominator);
-        Some(left.cmp(&right))
+        Some((left, right))
     }
 
     pub(crate) fn is_valid(self) -> bool {
@@ -328,29 +335,84 @@ pub struct AnalysisResult {
 
 impl AnalysisResult {
     /// Find the sampled frame responsible for an instant. Sparse intervals can
-    /// carry a prior sample. Use coverage_at to determine the interval status.
+    /// carry a prior sample within their covered interval. Use coverage_at to
+    /// determine the interval status.
     pub fn visible_at(&self, timestamp: Timestamp) -> Option<&FrameObservation> {
-        match self.coverage_at(timestamp)? {
-            Coverage::Observed | Coverage::Inferred | Coverage::Unknown => {}
-            Coverage::Incomplete => return None,
+        if !self.in_committed_range(timestamp) {
+            return None;
+        }
+        let interval = self.coverage_interval_at(timestamp)?;
+        if interval.status == Coverage::Incomplete {
+            return None;
         }
         let after = self.observations.partition_point(|frame| {
             timestamp
                 .compare(frame.timestamp)
                 .is_some_and(|cmp| cmp.is_ge())
         });
-        self.observations.get(after.checked_sub(1)?)
+        self.observations
+            .get(after.checked_sub(1)?)
+            .filter(|frame| {
+                self.in_committed_range(frame.timestamp)
+                    && interval
+                        .start
+                        .compare(frame.timestamp)
+                        .is_some_and(|cmp| cmp.is_le())
+                    && frame
+                        .timestamp
+                        .compare(timestamp)
+                        .is_some_and(|cmp| cmp.is_le())
+            })
     }
 
     /// Return the interval status at an instant in the half-open scan range.
     pub fn coverage_at(&self, timestamp: Timestamp) -> Option<Coverage> {
-        if !timestamp.is_valid() || timestamp.before(self.start) || !timestamp.before(self.end) {
+        if !self.in_scan_range(timestamp) || !self.has_valid_resume() {
             return None;
         }
-        let index = self
-            .coverage
-            .partition_point(|interval| !timestamp.before(interval.end));
-        self.coverage.get(index).map(|interval| interval.status)
+        if !self.in_committed_range(timestamp) {
+            return Some(Coverage::Incomplete);
+        }
+        self.coverage_interval_at(timestamp)
+            .map(|interval| interval.status)
+    }
+
+    fn coverage_interval_at(&self, timestamp: Timestamp) -> Option<&CoverageInterval> {
+        if !self.in_scan_range(timestamp) {
+            return None;
+        }
+        let index = self.coverage.partition_point(|interval| {
+            interval
+                .end
+                .compare(timestamp)
+                .is_some_and(|cmp| cmp.is_le())
+        });
+        self.coverage.get(index).filter(|interval| {
+            interval
+                .start
+                .compare(timestamp)
+                .is_some_and(|cmp| cmp.is_le())
+                && timestamp.before(interval.end)
+        })
+    }
+
+    fn in_scan_range(&self, timestamp: Timestamp) -> bool {
+        self.schema_version == RESULT_SCHEMA_VERSION
+            && self.start.compare(timestamp).is_some_and(|cmp| cmp.is_le())
+            && timestamp.before(self.end)
+    }
+
+    fn has_valid_resume(&self) -> bool {
+        self.resume_at.is_none_or(|resume| {
+            self.start.compare(resume).is_some_and(|cmp| cmp.is_le())
+                && resume.compare(self.end).is_some_and(|cmp| cmp.is_le())
+        })
+    }
+
+    pub(crate) fn in_committed_range(&self, timestamp: Timestamp) -> bool {
+        self.in_scan_range(timestamp)
+            && self.has_valid_resume()
+            && self.resume_at.is_none_or(|resume| timestamp.before(resume))
     }
 
     /// Return all appearances of a participant intersecting the half-open range.
@@ -360,11 +422,28 @@ impl AnalysisResult {
         start: Timestamp,
         end: Timestamp,
     ) -> impl Iterator<Item = &Appearance> {
+        let mut lower = start;
+        if lower.before(self.start) {
+            lower = self.start;
+        }
+        let committed_end = self.resume_at.unwrap_or(self.end);
+        let upper = if committed_end.before(end) {
+            committed_end
+        } else {
+            end
+        };
+        let valid_range = self.in_committed_range(lower) && lower.before(upper);
         self.appearances.iter().filter(move |appearance| {
-            start.before(end)
+            valid_range
                 && appearance.participant_id == Some(participant_id)
-                && appearance.start.before(end)
-                && start.before(appearance.end)
+                && self.in_committed_range(appearance.start)
+                && appearance.start.before(appearance.end)
+                && appearance
+                    .end
+                    .compare(committed_end)
+                    .is_some_and(|cmp| cmp.is_le())
+                && appearance.start.before(upper)
+                && lower.before(appearance.end)
         })
     }
 }

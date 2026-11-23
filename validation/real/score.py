@@ -49,8 +49,8 @@ def match(expected, predicted, threshold):
     return assignment
 
 
-def measure(library, fixture, fps, threshold):
-    clip = HERE / "media" / fixture["clip"]
+def measure(library, dataset, fixture, fps, threshold):
+    clip = dataset / "media" / fixture["clip"]
     width, height = fixture["size"]
     with tempfile.TemporaryDirectory() as scratch:
         rgb = pathlib.Path(scratch) / "frames.rgb"
@@ -105,15 +105,17 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("library", type=pathlib.Path)
     parser.add_argument("--iou", type=float, default=0.5)
+    parser.add_argument("--dataset", type=pathlib.Path, default=HERE,
+                        help="directory containing labels.json and media/")
     args = parser.parse_args()
     if not 0 < args.iou <= 1:
         parser.error("--iou must be greater than 0 and at most 1")
     library = load_library(args.library)
-    labels = json.loads((HERE / "labels.json").read_text())
+    labels = json.loads((args.dataset / "labels.json").read_text(encoding="utf-8"))
     by_clip = {}
     total = collections.Counter()
     for fixture in labels["fixtures"]:
-        counts = measure(library, fixture, labels["frames_per_second"], args.iou)
+        counts = measure(library, args.dataset, fixture, labels["frames_per_second"], args.iou)
         by_clip[fixture["clip"]] = summarize(counts)
         # Counter addition discards zero-valued entries, which summarize handles.
         total += counts
