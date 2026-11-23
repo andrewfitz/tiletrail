@@ -31,6 +31,27 @@ Every reported participant event in the stable windows is counted and split by u
 
 This small sample covers one real grid reflow, one brief visible camera-state transition, and screen-share content changes. It does not estimate temporal accuracy across platforms, genuine joins or departures, long occlusions, or cross-layout re-identification.
 
+## Results
+
+CPU builds of `ddec86e` and `d9798c1` were scored on macOS arm64 with FFmpeg 9.0.2. The raw reports include one record per expected event. [Initial report](results/ddec86e.json) · [Revised detector report](results/d9798c1.json)
+
+| Case and measure | Initial | Revised |
+| --- | ---: | ---: |
+| Jitsi dense, matched boxes | 58/90 | 82/90 |
+| Jitsi dense, same-ID anchor pairs (certain) | 47/80 (47) | 63/80 (28) |
+| Jitsi dense, matched timed events | 4/14 | 1/14 |
+| Jitsi dense, events in stable window | 24 | 12 |
+| Jitsi sparse, matched boxes | 30/50 | 50/50 |
+| Jitsi sparse, same-ID anchor pairs (certain) | 21/40 (21) | 33/40 (19) |
+| Jitsi sparse, matched timed and uncertainty-marked events | 5/12 | 2/12 |
+| Jitsi sparse, omitted ticks with inferred coverage | 11/11 | 11/11 |
+| Jitsi sparse, events in stable window | 24 | 0 |
+| Zoom dense, matched boxes | 7/24 | 24/24 |
+| Zoom dense, same-ID anchor pairs (certain) | 1/21 (1) | 19/21 (16) |
+| Zoom dense, events in stable window | 24 | 22 |
+
+Every matched event landed on its labeled tick. The revised build found all submitted Zoom and sparse Jitsi anchor boxes but still broke identities across the Jitsi reflow. It identified James F.'s avatar and video states on matched anchors and missed both corresponding timed events. Neither build timed the three Jitsi resizes successfully. Zoom video geometry stayed stable at the labeled anchors, yet the revised build emitted 22 events during the stable interval, including 13 marked certain. The sparse test verifies that the two matched moves are marked uncertain after a controlled omission.
+
 ## Attribution and reproduction
 
 - **Jitsi**. `jitsi-share-launch.mp4` excerpts *Abstract Wikipedia Volunteer Corner 2023-09.webm* by **DVrandecic (WMF)**, starting 114 seconds into the original. [Recording and license](https://commons.wikimedia.org/w/index.php?title=File:Abstract_Wikipedia_Volunteer_Corner_2023-09.webm&oldid=1004710052)

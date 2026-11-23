@@ -51,10 +51,25 @@ def analyze_clip(library, fixture, case, fps):
                 raise RuntimeError(f"FFmpeg failed on {fixture['clip']}")
         check(library.tiletrail_analyzer_result_json(analyzer, Timestamp(last + 1, 1, fps),
                                                    c.byref(output), c.byref(error)), error)
-        return json.loads(c.string_at(output.data, output.len))
+        result = json.loads(c.string_at(output.data, output.len))
+        submitted = [tick for tick in range(first, last + 1) if tick not in dropped]
+        observed = [item["timestamp"] for item in result["observations"]]
+        if observed != [timestamp(tick, fps) for tick in submitted]:
+            raise ValueError(f"{case['name']} observations do not reproduce submitted timestamps")
+        if result["start"] != timestamp(first, fps) or result["end"] != timestamp(last + 1, fps):
+            raise ValueError(f"{case['name']} scan bounds do not reproduce the requested range")
+        for event in result["events"]:
+            time = event["timestamp"]
+            if time["pts"] not in submitted or time != timestamp(time["pts"], fps):
+                raise ValueError(f"{case['name']} event timestamp is outside submitted frames")
+        return result
     finally:
         library.tiletrail_buffer_free(c.byref(output))
         library.tiletrail_analyzer_free(analyzer)
+
+
+def timestamp(tick, fps):
+    return {"pts": tick, "time_base": {"numerator": 1, "denominator": fps}}
 
 
 def match_anchors(result, fixture, case, threshold):
