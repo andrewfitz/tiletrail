@@ -92,3 +92,9 @@ mpcut participants scan --file /tmp/tiletrail-gallery-fixtures/interview.mp4 \
 python3 benchmarks/score_gallery.py /tmp/tiletrail-gallery-fixtures/interview.truth.json \
   /tmp/tiletrail-gallery-fixtures/interview.mpcut.json
 ```
+
+For the compressed-input standalone release check, encode H.264 with
+`-c:v libx264 -preset fast -crf 19 -pix_fmt yuv420p`, then decode it with
+`ffmpeg -i interview-yuv420p.mp4 -f rawvideo -pix_fmt rgb24 interview-decoded.rgb`.
+Use that decoded input with both backends of `gallery_benchmark` and score
+against the original interview annotations.

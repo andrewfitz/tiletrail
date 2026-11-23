@@ -2,7 +2,9 @@
 
 All 949 annotated boxes matched at IoU ≥ 0.5 on the evaluated release, with zero false boxes. CPU and Metal produced identical observations, participant and appearance tracks, events, and coverage across the six clips. The raw inputs are deterministic RGB24 frames at 960×540 and 10 fps. Four development clips match the initial input SHA-256 hashes. The two held-out layouts were kept out of detector tuning.
 
-These results are from the accuracy freeze at `d9798c1`. [Metrics, input hashes, and backend comparisons](gallery-freeze-2026-11-23.json)
+The final release at `f1cdfb6292f7` reproduced the analytical payloads of the
+accuracy freeze at `d9798c1` for every clip and backend. The comparison excludes
+backend diagnostics. [Final metrics, input hashes, and parity](gallery-release-2026-11-23.json) · [Accuracy freeze metrics](gallery-freeze-2026-11-23.json)
 
 | Clip | Boxes matched, initial → evaluated | False boxes, initial → evaluated | Mean matched IoU, evaluated | Annotated crop area covered, initial → evaluated |
 | --- | ---: | ---: | ---: | ---: |
@@ -27,3 +29,9 @@ The highest matched crop edge error was 42.75 source pixels in the stage-and-sha
 All 50 matched confirmed events landed on the exact annotated frame. The other eight expected events had no confirmed match. The gallery initially had 25 exact confirmed matches, six false confirmed events and five provisional events. The stage-and-share clip retained all seven exact matches and eliminated eight false confirmed events. The speech control had no events in either release. Screen-share regions had no participant IDs.
 
 The interview recovered both the one-frame and sustained returns, compared with zero of two initially. No confirmed wrong links or fragmented links were observed on geometrically matched boxes in the evaluated build. The 20 indistinguishable gallery camera-off cards that previously had confirmed fragmented links all became provisional. The held-out reflow produced six additional provisional links. The stage plus thumbnail shared one participant ID with distinct appearance IDs in 25/25 development and 12/12 held-out person-frames. The fixtures exercise controlled layouts and support separate accuracy measurements on human recordings.
+
+FFmpeg decoded a standard H.264 `yuv420p` copy of the interview for a separate check.
+Both final release backends produced the same analytical results, with 76/76 boxes,
+7/7 exact events and 2/2 identity returns. A lossless H.264 RGB copy decoded to
+the original fixture's exact RGB24 bytes. These compressed checks used the
+standalone release runner after FFmpeg decoding.

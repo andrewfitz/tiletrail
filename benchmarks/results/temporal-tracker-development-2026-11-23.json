@@ -1,0 +1,601 @@
+{
+  "date": "2026-11-23",
+  "comparison": "CPU release b1136ac versus b1136ac with the temporal tracker changes only. Both builds used identical spatial detection, decoding, labels and scorers. These are development measurements.",
+  "compiler": "rustc 1.99.0 (b940084d7 2026-09-28)",
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "sha256": {
+    "before_library": "c5db73917773f06602af049fd66fe3f1157375aafdbd37b0fd2caf13a573fb73",
+    "after_library": "36456d7488b530a02ca7285f7b35de492e7d22613acfef0f2137393143b9686f",
+    "temporal_labels": "d24c1562fba19d40d193733df1731a4b80fbe42130d71401c531e6222d25ea0a",
+    "temporal_scorer": "b0b73b43e950ebb5e624e1e16506e9a6657cb2a4e9fd7fffda93baa69c446f99",
+    "tracker": "f605c8105086f185247c35f82fbcd46472396fb85daa657edf0d2ae7494caf74",
+    "evidence": "c6470247723d6d7dd7127052f4737eb369f7048540ded2139e08b33feabfa307"
+  },
+  "real_temporal": {
+    "jitsi-dense": {
+      "before": {
+        "anchors": {
+          "labeled": 90,
+          "matched": 82,
+          "camera_state_matches": 82
+        },
+        "continuity": {
+          "pairs": 80,
+          "different_id_provisional": 7,
+          "missing_geometry": 10,
+          "same_id_certain": 28,
+          "same_id_provisional": 35
+        },
+        "expected_events": 14,
+        "event_outcomes": {
+          "matched": 1,
+          "missing_geometry": 4,
+          "missing_identity": 9
+        },
+        "negative_window_events": 12,
+        "negative_window_breakdown": {
+          "enter_certain": 2,
+          "enter_uncertain": 4,
+          "leave_certain": 1,
+          "leave_uncertain": 4,
+          "resize_certain": 1
+        },
+        "dropped_tick_coverage": {},
+        "matched_event_tick_errors": [
+          0
+        ]
+      },
+      "after": {
+        "anchors": {
+          "labeled": 90,
+          "matched": 82,
+          "camera_state_matches": 82
+        },
+        "continuity": {
+          "pairs": 80,
+          "different_id_provisional": 2,
+          "missing_geometry": 10,
+          "same_id_certain": 63,
+          "same_id_provisional": 5
+        },
+        "expected_events": 14,
+        "event_outcomes": {
+          "matched": 7,
+          "missing_geometry": 4,
+          "missing_identity": 3
+        },
+        "negative_window_events": 12,
+        "negative_window_breakdown": {
+          "enter_certain": 2,
+          "enter_uncertain": 4,
+          "leave_certain": 1,
+          "leave_uncertain": 4,
+          "resize_certain": 1
+        },
+        "dropped_tick_coverage": {},
+        "matched_event_tick_errors": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "jitsi-sparse": {
+      "before": {
+        "anchors": {
+          "labeled": 50,
+          "matched": 50,
+          "camera_state_matches": 50
+        },
+        "continuity": {
+          "pairs": 40,
+          "different_id_provisional": 7,
+          "same_id_certain": 19,
+          "same_id_provisional": 14
+        },
+        "expected_events": 12,
+        "event_outcomes": {
+          "matched": 2,
+          "missing_identity": 10
+        },
+        "negative_window_events": 0,
+        "negative_window_breakdown": {},
+        "dropped_tick_coverage": {
+          "inferred": 11
+        },
+        "matched_event_tick_errors": [
+          0,
+          0
+        ]
+      },
+      "after": {
+        "anchors": {
+          "labeled": 50,
+          "matched": 50,
+          "camera_state_matches": 50
+        },
+        "continuity": {
+          "pairs": 40,
+          "same_id_certain": 40
+        },
+        "expected_events": 12,
+        "event_outcomes": {
+          "matched": 12
+        },
+        "negative_window_events": 0,
+        "negative_window_breakdown": {},
+        "dropped_tick_coverage": {
+          "inferred": 11
+        },
+        "matched_event_tick_errors": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "zoom-dense": {
+      "before": {
+        "anchors": {
+          "labeled": 24,
+          "matched": 24,
+          "camera_state_matches": 24
+        },
+        "continuity": {
+          "pairs": 21,
+          "different_id_provisional": 2,
+          "same_id_certain": 16,
+          "same_id_provisional": 3
+        },
+        "expected_events": 0,
+        "event_outcomes": {},
+        "negative_window_events": 22,
+        "negative_window_breakdown": {
+          "enter_certain": 4,
+          "enter_uncertain": 2,
+          "leave_certain": 3,
+          "leave_uncertain": 2,
+          "move_certain": 3,
+          "resize_certain": 3,
+          "resize_uncertain": 5
+        },
+        "dropped_tick_coverage": {},
+        "matched_event_tick_errors": []
+      },
+      "after": {
+        "anchors": {
+          "labeled": 24,
+          "matched": 24,
+          "camera_state_matches": 24
+        },
+        "continuity": {
+          "pairs": 21,
+          "same_id_certain": 21
+        },
+        "expected_events": 0,
+        "event_outcomes": {},
+        "negative_window_events": 1,
+        "negative_window_breakdown": {
+          "leave_certain": 1
+        },
+        "dropped_tick_coverage": {},
+        "matched_event_tick_errors": []
+      }
+    }
+  },
+  "synthetic_gallery": {
+    "gallery": {
+      "before": {
+        "matched_boxes": 374,
+        "false_boxes": 0,
+        "missed_boxes": 0,
+        "confirmed_wrong_identity_links": 0,
+        "confirmed_fragmented_identity_links": 0,
+        "uncertain_identity_links": 20,
+        "expected_returns": 4,
+        "unmatched_returns": 1,
+        "expected_events": 29,
+        "false_confirmed_events": 0,
+        "missed_events": 6,
+        "uncertain_events": 8
+      },
+      "after": {
+        "matched_boxes": 374,
+        "false_boxes": 0,
+        "missed_boxes": 0,
+        "confirmed_wrong_identity_links": 0,
+        "confirmed_fragmented_identity_links": 0,
+        "uncertain_identity_links": 20,
+        "expected_returns": 4,
+        "unmatched_returns": 1,
+        "expected_events": 29,
+        "false_confirmed_events": 0,
+        "missed_events": 6,
+        "uncertain_events": 8
+      }
+    },
+    "stage_and_share": {
+      "before": {
+        "matched_boxes": 156,
+        "false_boxes": 0,
+        "missed_boxes": 0,
+        "confirmed_wrong_identity_links": 0,
+        "confirmed_fragmented_identity_links": 0,
+        "uncertain_identity_links": 0,
+        "expected_returns": 0,
+        "unmatched_returns": 0,
+        "expected_events": 7,
+        "false_confirmed_events": 0,
+        "missed_events": 0,
+        "uncertain_events": 0
+      },
+      "after": {
+        "matched_boxes": 156,
+        "false_boxes": 0,
+        "missed_boxes": 0,
+        "confirmed_wrong_identity_links": 0,
+        "confirmed_fragmented_identity_links": 0,
+        "uncertain_identity_links": 0,
+        "expected_returns": 0,
+        "unmatched_returns": 0,
+        "expected_events": 7,
+        "false_confirmed_events": 0,
+        "missed_events": 0,
+        "uncertain_events": 0
+      }
+    },
+    "interview": {
+      "before": {
+        "matched_boxes": 76,
+        "false_boxes": 0,
+        "missed_boxes": 0,
+        "confirmed_wrong_identity_links": 0,
+        "confirmed_fragmented_identity_links": 0,
+        "uncertain_identity_links": 0,
+        "expected_returns": 2,
+        "unmatched_returns": 0,
+        "expected_events": 7,
+        "false_confirmed_events": 0,
+        "missed_events": 0,
+        "uncertain_events": 0
+      },
+      "after": {
+        "matched_boxes": 76,
+        "false_boxes": 0,
+        "missed_boxes": 0,
+        "confirmed_wrong_identity_links": 0,
+        "confirmed_fragmented_identity_links": 0,
+        "uncertain_identity_links": 0,
+        "expected_returns": 2,
+        "unmatched_returns": 0,
+        "expected_events": 7,
+        "false_confirmed_events": 0,
+        "missed_events": 0,
+        "uncertain_events": 0
+      }
+    },
+    "speech_control": {
+      "before": {
+        "matched_boxes": 48,
+        "false_boxes": 0,
+        "missed_boxes": 0,
+        "confirmed_wrong_identity_links": 0,
+        "confirmed_fragmented_identity_links": 0,
+        "uncertain_identity_links": 0,
+        "expected_returns": 0,
+        "unmatched_returns": 0,
+        "expected_events": 0,
+        "false_confirmed_events": 0,
+        "missed_events": 0,
+        "uncertain_events": 0
+      },
+      "after": {
+        "matched_boxes": 48,
+        "false_boxes": 0,
+        "missed_boxes": 0,
+        "confirmed_wrong_identity_links": 0,
+        "confirmed_fragmented_identity_links": 0,
+        "uncertain_identity_links": 0,
+        "expected_returns": 0,
+        "unmatched_returns": 0,
+        "expected_events": 0,
+        "false_confirmed_events": 0,
+        "missed_events": 0,
+        "uncertain_events": 0
+      }
+    }
+  },
+  "limits": [
+    "Dense Jitsi still misses geometry behind the toolbar and cannot identify the participant obscured by a new avatar during reflow. Its stable-window false event count stays at 12.",
+    "The remaining Zoom stable-window event reports a fourth detected thumbnail leaving when the shared editor disappears. The labels contain three thumbnails.",
+    "The prototype that divided a merged camera-off region lacked independent visual support for both resulting crops and was dropped."
+  ],
+  "timing": {
+    "repetitions": 5,
+    "method": "Paired alternating release binaries, packed RGB24, CPU mode. Elapsed time includes initialization, input reads, frame analysis and finish. Each run streams repeated frames into one analyzer. Raw timings in seconds.",
+    "binary_sha256": {
+      "before": "1595d0b68472fb26325b34a9b7f3649cd2b9a8837ec7a6c05e233ac2c8b8585e",
+      "after": "80e0846f5b87763b6772cfc5071729e8272c2f36c8dc0c52eacd066938ade7e2"
+    },
+    "cases": {
+      "jitsi-dense": {
+        "frames_per_run": 992,
+        "samples": {
+          "before": [
+            1.4062999170000001,
+            0.931721583,
+            0.915857,
+            1.054244666,
+            1.365022
+          ],
+          "after": [
+            0.897427542,
+            0.9328655,
+            0.941473916,
+            0.954199833,
+            1.441105208
+          ]
+        },
+        "cpu_samples": {
+          "before": [
+            0.9196599999999999,
+            0.8910159999999996,
+            0.8764899999999998,
+            0.8921639999999997,
+            0.9182880000000004
+          ],
+          "after": [
+            0.882082,
+            0.9003810000000003,
+            0.8987419999999999,
+            0.8981670000000004,
+            0.9327589999999994
+          ]
+        },
+        "cpu_median": {
+          "before": 0.8921639999999997,
+          "after": 0.8987419999999999
+        },
+        "median": {
+          "before": 1.054244666,
+          "after": 0.941473916
+        },
+        "median_elapsed_change_percent": -10.7
+      },
+      "zoom-dense": {
+        "frames_per_run": 2048,
+        "samples": {
+          "before": [
+            0.713171667,
+            0.62652575,
+            0.751219334,
+            0.683723,
+            0.801369375
+          ],
+          "after": [
+            0.7266865,
+            0.66824375,
+            0.742761458,
+            0.628058917,
+            0.706271333
+          ]
+        },
+        "cpu_samples": {
+          "before": [
+            0.6612839999999993,
+            0.6111330000000006,
+            0.6550990000000008,
+            0.6362219999999992,
+            0.6553060000000004
+          ],
+          "after": [
+            0.6332910000000016,
+            0.6224259999999999,
+            0.6701690000000005,
+            0.6201239999999988,
+            0.6136169999999996
+          ]
+        },
+        "cpu_median": {
+          "before": 0.6550990000000008,
+          "after": 0.6224259999999999
+        },
+        "median": {
+          "before": 0.713171667,
+          "after": 0.706271333
+        },
+        "median_elapsed_change_percent": -0.97
+      },
+      "gallery": {
+        "frames_per_run": 1872,
+        "samples": {
+          "before": [
+            0.746148,
+            0.70107375,
+            0.751161,
+            0.822354083,
+            0.831764667
+          ],
+          "after": [
+            0.737178875,
+            0.913464625,
+            0.769326709,
+            0.73118125,
+            0.819543584
+          ]
+        },
+        "cpu_samples": {
+          "before": [
+            0.7004470000000005,
+            0.7007529999999971,
+            0.7097979999999975,
+            0.7412720000000004,
+            0.7105119999999978
+          ],
+          "after": [
+            0.6979939999999987,
+            0.7485039999999996,
+            0.7012630000000026,
+            0.6804810000000003,
+            0.7606420000000025
+          ]
+        },
+        "cpu_median": {
+          "before": 0.7097979999999975,
+          "after": 0.7012630000000026
+        },
+        "median": {
+          "before": 0.751161,
+          "after": 0.769326709
+        },
+        "median_elapsed_change_percent": 2.42
+      },
+      "stage_and_share": {
+        "frames_per_run": 1620,
+        "samples": {
+          "before": [
+            0.458371625,
+            0.617855708,
+            1.194616625,
+            0.432045625,
+            0.500488417
+          ],
+          "after": [
+            0.485105541,
+            0.496325416,
+            0.493965209,
+            0.460896333,
+            0.518771084
+          ]
+        },
+        "cpu_samples": {
+          "before": [
+            0.4485949999999992,
+            0.4537059999999986,
+            0.48920099999999955,
+            0.4189240000000023,
+            0.4315289999999994
+          ],
+          "after": [
+            0.43403999999999954,
+            0.4538150000000023,
+            0.4179069999999996,
+            0.420850999999999,
+            0.46385800000000366
+          ]
+        },
+        "cpu_median": {
+          "before": 0.4485949999999992,
+          "after": 0.43403999999999954
+        },
+        "median": {
+          "before": 0.500488417,
+          "after": 0.493965209
+        },
+        "median_elapsed_change_percent": -1.3
+      },
+      "interview": {
+        "frames_per_run": 1584,
+        "samples": {
+          "before": [
+            0.446935583,
+            0.373734042,
+            0.329128709,
+            0.489450583,
+            0.420702375
+          ],
+          "after": [
+            0.329074083,
+            0.320319209,
+            0.510041709,
+            0.498959584,
+            0.393985958
+          ]
+        },
+        "cpu_samples": {
+          "before": [
+            0.3752639999999996,
+            0.3392459999999975,
+            0.32604200000000283,
+            0.3441299999999998,
+            0.33791300000000213
+          ],
+          "after": [
+            0.32857100000000017,
+            0.3209000000000035,
+            0.3447819999999986,
+            0.34908699999999726,
+            0.3377719999999975
+          ]
+        },
+        "cpu_median": {
+          "before": 0.3392459999999975,
+          "after": 0.3377719999999975
+        },
+        "median": {
+          "before": 0.420702375,
+          "after": 0.393985958
+        },
+        "median_elapsed_change_percent": -6.35
+      },
+      "speech_control": {
+        "frames_per_run": 864,
+        "samples": {
+          "before": [
+            0.2192995,
+            0.183209125,
+            0.190343917,
+            0.185533458,
+            0.18171025
+          ],
+          "after": [
+            0.184045375,
+            0.18278675,
+            0.198652708,
+            0.197326166,
+            0.188079209
+          ]
+        },
+        "cpu_samples": {
+          "before": [
+            0.21139999999999937,
+            0.18499299999999863,
+            0.19165400000000332,
+            0.18888399999999805,
+            0.1847879999999975
+          ],
+          "after": [
+            0.1861089999999983,
+            0.1850649999999998,
+            0.19806399999999869,
+            0.19614100000000256,
+            0.1895730000000011
+          ]
+        },
+        "cpu_median": {
+          "before": 0.18888399999999805,
+          "after": 0.1895730000000011
+        },
+        "median": {
+          "before": 0.185533458,
+          "after": 0.188079209
+        },
+        "median_elapsed_change_percent": 1.37
+      }
+    },
+    "conditions": "Alternating five runs per binary and input on a shared Mac. CPU seconds are the sum of user and system time. The native-resolution Jitsi and Zoom inputs are FFmpeg RGB24 decodes of the labeled dense scan intervals. The synthetic inputs are 960x540 at 10 fps. Variability in wall time limits small-effect comparisons."
+  }
+}

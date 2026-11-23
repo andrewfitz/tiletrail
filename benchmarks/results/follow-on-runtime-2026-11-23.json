@@ -1,0 +1,525 @@
+{
+  "before": "b1136ac",
+  "after": "f1cdfb6",
+  "machine": "Apple M4 Max / macOS 27.0.1 / rustc 1.99.0",
+  "runner_sha256": {
+    "before": "e15a206bcf3ff3619de75902097909ebedaf1e2e96147e1823759d0d9d163214",
+    "after": "3c071bb96a68e5803c3dbebed9fc4b352882d43232a6271241167bd852ff7dab"
+  },
+  "cases": {
+    "meet-grid/cpu": {
+      "input_sha256": "b8ced0e3c6ce4bd7180719c796cda881a7cdd374c1dd438f1f81742b94814ab3",
+      "samples": {
+        "before": [
+          {
+            "frames": 100,
+            "wall": 0.104291583,
+            "cpu": 0.10985099999999999,
+            "rss_bytes": 13975552
+          },
+          {
+            "frames": 100,
+            "wall": 0.102886833,
+            "cpu": 0.107834,
+            "rss_bytes": 14090240
+          },
+          {
+            "frames": 100,
+            "wall": 0.102897416,
+            "cpu": 0.10811799999999996,
+            "rss_bytes": 13893632
+          }
+        ],
+        "after": [
+          {
+            "frames": 100,
+            "wall": 0.105262875,
+            "cpu": 0.11045500000000001,
+            "rss_bytes": 14057472
+          },
+          {
+            "frames": 100,
+            "wall": 0.104661958,
+            "cpu": 0.109513,
+            "rss_bytes": 14237696
+          },
+          {
+            "frames": 100,
+            "wall": 0.106587541,
+            "cpu": 0.111685,
+            "rss_bytes": 14204928
+          }
+        ]
+      }
+    },
+    "meet-grid/gpu": {
+      "input_sha256": "b8ced0e3c6ce4bd7180719c796cda881a7cdd374c1dd438f1f81742b94814ab3",
+      "samples": {
+        "before": [
+          {
+            "frames": 40,
+            "wall": 0.087326541,
+            "cpu": 0.082793,
+            "rss_bytes": 38092800
+          },
+          {
+            "frames": 40,
+            "wall": 0.073379833,
+            "cpu": 0.07995599999999997,
+            "rss_bytes": 37978112
+          },
+          {
+            "frames": 40,
+            "wall": 0.073407084,
+            "cpu": 0.08180000000000004,
+            "rss_bytes": 38076416
+          }
+        ],
+        "after": [
+          {
+            "frames": 40,
+            "wall": 0.105983041,
+            "cpu": 0.08996399999999993,
+            "rss_bytes": 38158336
+          },
+          {
+            "frames": 40,
+            "wall": 0.075272792,
+            "cpu": 0.08254800000000007,
+            "rss_bytes": 38076416
+          },
+          {
+            "frames": 40,
+            "wall": 0.073121417,
+            "cpu": 0.08066400000000001,
+            "rss_bytes": 38076416
+          }
+        ]
+      }
+    },
+    "meet-sidebar/cpu": {
+      "input_sha256": "8dab1bdf315c3c833d69edc7b819aaa7343358b99424190f19deea6f8f46b2b9",
+      "samples": {
+        "before": [
+          {
+            "frames": 400,
+            "wall": 0.118725625,
+            "cpu": 0.123809,
+            "rss_bytes": 8617984
+          },
+          {
+            "frames": 400,
+            "wall": 0.118323,
+            "cpu": 0.12332000000000021,
+            "rss_bytes": 8601600
+          },
+          {
+            "frames": 400,
+            "wall": 0.143878833,
+            "cpu": 0.12772399999999995,
+            "rss_bytes": 8716288
+          }
+        ],
+        "after": [
+          {
+            "frames": 400,
+            "wall": 0.118276375,
+            "cpu": 0.12438799999999989,
+            "rss_bytes": 8749056
+          },
+          {
+            "frames": 400,
+            "wall": 0.1184285,
+            "cpu": 0.12358499999999994,
+            "rss_bytes": 8716288
+          },
+          {
+            "frames": 400,
+            "wall": 0.11435975,
+            "cpu": 0.11892200000000008,
+            "rss_bytes": 8683520
+          }
+        ]
+      }
+    },
+    "meet-sidebar/gpu": {
+      "input_sha256": "8dab1bdf315c3c833d69edc7b819aaa7343358b99424190f19deea6f8f46b2b9",
+      "samples": {
+        "before": [
+          {
+            "frames": 160,
+            "wall": 0.118917083,
+            "cpu": 0.10295199999999993,
+            "rss_bytes": 33062912
+          },
+          {
+            "frames": 160,
+            "wall": 0.092904833,
+            "cpu": 0.10392899999999994,
+            "rss_bytes": 35373056
+          },
+          {
+            "frames": 160,
+            "wall": 0.0978675,
+            "cpu": 0.10997800000000002,
+            "rss_bytes": 33292288
+          }
+        ],
+        "after": [
+          {
+            "frames": 160,
+            "wall": 0.101583541,
+            "cpu": 0.10342699999999994,
+            "rss_bytes": 33308672
+          },
+          {
+            "frames": 160,
+            "wall": 0.092404708,
+            "cpu": 0.10489100000000007,
+            "rss_bytes": 34701312
+          },
+          {
+            "frames": 160,
+            "wall": 0.093930125,
+            "cpu": 0.10827699999999996,
+            "rss_bytes": 33914880
+          }
+        ]
+      }
+    },
+    "teams-overlay/cpu": {
+      "input_sha256": "cde1e999f7918f2035e22e9d6a99b4a47e74d878070fec605159bd55633d9b1a",
+      "samples": {
+        "before": [
+          {
+            "frames": 400,
+            "wall": 0.244247875,
+            "cpu": 0.21999200000000008,
+            "rss_bytes": 13647872
+          },
+          {
+            "frames": 400,
+            "wall": 0.209762209,
+            "cpu": 0.21329900000000013,
+            "rss_bytes": 13647872
+          },
+          {
+            "frames": 400,
+            "wall": 0.216211291,
+            "cpu": 0.2204679999999999,
+            "rss_bytes": 13484032
+          }
+        ],
+        "after": [
+          {
+            "frames": 400,
+            "wall": 0.176736,
+            "cpu": 0.18172599999999983,
+            "rss_bytes": 13877248
+          },
+          {
+            "frames": 400,
+            "wall": 0.181309458,
+            "cpu": 0.18590799999999996,
+            "rss_bytes": 13877248
+          },
+          {
+            "frames": 400,
+            "wall": 0.22008375,
+            "cpu": 0.1914290000000003,
+            "rss_bytes": 13844480
+          }
+        ]
+      }
+    },
+    "teams-overlay/gpu": {
+      "input_sha256": "cde1e999f7918f2035e22e9d6a99b4a47e74d878070fec605159bd55633d9b1a",
+      "samples": {
+        "before": [
+          {
+            "frames": 160,
+            "wall": 0.231682667,
+            "cpu": 0.15847300000000009,
+            "rss_bytes": 38043648
+          },
+          {
+            "frames": 160,
+            "wall": 0.138851209,
+            "cpu": 0.1507679999999998,
+            "rss_bytes": 39976960
+          },
+          {
+            "frames": 160,
+            "wall": 0.140079125,
+            "cpu": 0.15351500000000007,
+            "rss_bytes": 39862272
+          }
+        ],
+        "after": [
+          {
+            "frames": 160,
+            "wall": 0.154718209,
+            "cpu": 0.14617299999999944,
+            "rss_bytes": 38027264
+          },
+          {
+            "frames": 160,
+            "wall": 0.133997333,
+            "cpu": 0.1432910000000005,
+            "rss_bytes": 37896192
+          },
+          {
+            "frames": 160,
+            "wall": 0.273599459,
+            "cpu": 0.14126199999999978,
+            "rss_bytes": 40337408
+          }
+        ]
+      }
+    },
+    "active-avatars-64/cpu": {
+      "input_sha256": "9afed6087f9c169ad71f2b9801c7b1b36b5499ffa529e21b053fe14a53000605",
+      "samples": {
+        "before": [
+          {
+            "frames": 100,
+            "wall": 0.089739083,
+            "cpu": 0.09513900000000008,
+            "rss_bytes": 14925824
+          },
+          {
+            "frames": 100,
+            "wall": 0.088953708,
+            "cpu": 0.09443599999999952,
+            "rss_bytes": 14909440
+          },
+          {
+            "frames": 100,
+            "wall": 0.089667292,
+            "cpu": 0.09487000000000023,
+            "rss_bytes": 14696448
+          }
+        ],
+        "after": [
+          {
+            "frames": 100,
+            "wall": 0.102650291,
+            "cpu": 0.10771700000000006,
+            "rss_bytes": 17514496
+          },
+          {
+            "frames": 100,
+            "wall": 0.102456875,
+            "cpu": 0.10710500000000023,
+            "rss_bytes": 17514496
+          },
+          {
+            "frames": 100,
+            "wall": 0.103211583,
+            "cpu": 0.10798500000000022,
+            "rss_bytes": 17465344
+          }
+        ]
+      }
+    },
+    "active-avatars-64/gpu": {
+      "input_sha256": "9afed6087f9c169ad71f2b9801c7b1b36b5499ffa529e21b053fe14a53000605",
+      "samples": {
+        "before": [
+          {
+            "frames": 40,
+            "wall": 0.087170125,
+            "cpu": 0.07297799999999954,
+            "rss_bytes": 36749312
+          },
+          {
+            "frames": 40,
+            "wall": 0.08548175,
+            "cpu": 0.07550900000000027,
+            "rss_bytes": 34455552
+          },
+          {
+            "frames": 40,
+            "wall": 0.063402125,
+            "cpu": 0.06993799999999961,
+            "rss_bytes": 36175872
+          }
+        ],
+        "after": [
+          {
+            "frames": 40,
+            "wall": 0.092110583,
+            "cpu": 0.07785600000000015,
+            "rss_bytes": 37191680
+          },
+          {
+            "frames": 40,
+            "wall": 0.073983542,
+            "cpu": 0.07888099999999998,
+            "rss_bytes": 37257216
+          },
+          {
+            "frames": 40,
+            "wall": 0.086563959,
+            "cpu": 0.07659400000000005,
+            "rss_bytes": 37011456
+          }
+        ]
+      }
+    }
+  },
+  "parity": {
+    "active-avatars-64": {
+      "observations": 4,
+      "max_regions": 64
+    },
+    "meet-camera-off-sidebar": {
+      "observations": 16,
+      "max_regions": 2
+    },
+    "meet-presenter-sidebar": {
+      "observations": 16,
+      "max_regions": 2
+    },
+    "meet-speaker": {
+      "observations": 16,
+      "max_regions": 1
+    },
+    "teams-presenter-overlay": {
+      "observations": 16,
+      "max_regions": 6
+    },
+    "teams-presenter-sidebar": {
+      "observations": 16,
+      "max_regions": 2
+    },
+    "teams-slides-only": {
+      "observations": 16,
+      "max_regions": 1
+    },
+    "teams-speaker": {
+      "observations": 16,
+      "max_regions": 1
+    },
+    "teams-stage-filmstrip": {
+      "observations": 16,
+      "max_regions": 5
+    },
+    "meet-gallery-01": {
+      "observations": 4,
+      "max_regions": 24
+    },
+    "meet-gallery-05": {
+      "observations": 4,
+      "max_regions": 24
+    },
+    "teams-gallery-2x2": {
+      "observations": 4,
+      "max_regions": 4
+    },
+    "teams-gallery-3": {
+      "observations": 4,
+      "max_regions": 3
+    },
+    "jitsi-share-launch": {
+      "observations": 32,
+      "max_regions": 12
+    },
+    "zoom-slide": {
+      "observations": 32,
+      "max_regions": 5
+    }
+  },
+  "long_stress": [
+    {
+      "backend": "cpu",
+      "committed_frames": 100,
+      "elapsed_seconds": 0.109226167,
+      "events": 0,
+      "finish_seconds": 3.292e-06,
+      "frames_per_second": 915.5315319267772,
+      "initialization_seconds": 3.2209e-05,
+      "read_and_push_seconds": 0.109190666,
+      "realtime_multiple": 228.8828829816943,
+      "tracks": 64,
+      "max_rss_bytes": 15138816,
+      "process_cpu_seconds": 0.107822,
+      "build": "baseline"
+    },
+    {
+      "backend": "cpu",
+      "committed_frames": 100,
+      "elapsed_seconds": 0.110147167,
+      "events": 6732,
+      "finish_seconds": 4.625e-06,
+      "frames_per_second": 907.8762779255139,
+      "initialization_seconds": 0.000157583,
+      "read_and_push_seconds": 0.109984959,
+      "realtime_multiple": 226.96906948137848,
+      "tracks": 460,
+      "max_rss_bytes": 17694720,
+      "process_cpu_seconds": 0.11521399999999998,
+      "build": "combined"
+    },
+    {
+      "backend": "cpu",
+      "committed_frames": 400,
+      "elapsed_seconds": 0.3913275,
+      "events": 0,
+      "finish_seconds": 4.208e-06,
+      "frames_per_second": 1022.1617443190167,
+      "initialization_seconds": 5.834e-06,
+      "read_and_push_seconds": 0.391317458,
+      "realtime_multiple": 255.5404360797542,
+      "tracks": 64,
+      "max_rss_bytes": 36569088,
+      "process_cpu_seconds": 0.392363,
+      "build": "baseline"
+    },
+    {
+      "backend": "cpu",
+      "committed_frames": 400,
+      "elapsed_seconds": 0.487228333,
+      "events": 27132,
+      "finish_seconds": 7.208e-06,
+      "frames_per_second": 820.9703190639367,
+      "initialization_seconds": 3.208e-06,
+      "read_and_push_seconds": 0.487217917,
+      "realtime_multiple": 205.24257976598417,
+      "tracks": 1660,
+      "max_rss_bytes": 45596672,
+      "process_cpu_seconds": 0.44496500000000005,
+      "build": "combined"
+    },
+    {
+      "backend": "cpu",
+      "committed_frames": 1000,
+      "elapsed_seconds": 1.4715105,
+      "events": 0,
+      "finish_seconds": 5.375e-06,
+      "frames_per_second": 679.5738120794925,
+      "initialization_seconds": 3.291e-06,
+      "read_and_push_seconds": 1.4715018340000001,
+      "realtime_multiple": 169.89345301987314,
+      "tracks": 64,
+      "max_rss_bytes": 79298560,
+      "process_cpu_seconds": 1.0296379999999998,
+      "build": "baseline"
+    },
+    {
+      "backend": "cpu",
+      "committed_frames": 1000,
+      "elapsed_seconds": 1.928546667,
+      "events": 67932,
+      "finish_seconds": 1.925e-05,
+      "frames_per_second": 518.5251760360953,
+      "initialization_seconds": 3.292e-06,
+      "read_and_push_seconds": 1.928524125,
+      "realtime_multiple": 129.63129400902383,
+      "tracks": 4060,
+      "max_rss_bytes": 101597184,
+      "process_cpu_seconds": 1.2715649999999998,
+      "build": "combined"
+    }
+  ]
+}
