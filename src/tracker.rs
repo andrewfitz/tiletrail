@@ -118,17 +118,28 @@ impl Tracker {
             })
             .collect();
 
+        review_merged_slots(&tiles, &candidates, active_count, &mut decisions);
         review_placeholders(&tiles, &candidates, active_count, &mut decisions);
+        reconcile_stage_switches(&tiles, &candidates, active_count, &mut decisions);
 
         let mut next = Vec::with_capacity(tiles.len());
         let mut regions = Vec::with_capacity(tiles.len());
+        let mut ambiguous_stages = Vec::new();
         for (row, decision) in decisions.iter().enumerate() {
             let matched = decision.matched;
             let tile = &tiles[row];
             let candidate = matched.map(|index| candidates[index]);
-            let duplicate = (candidate.is_none() && tile.kind == TileKind::Video)
-                .then(|| simultaneous_identity(row, &tiles, &decisions, &candidates, &next))
-                .flatten();
+            let feed = if candidate.is_none() && tile.kind == TileKind::Video {
+                feed_partner(row, &tiles)
+            } else {
+                FeedMatch::None
+            };
+            let duplicate = match feed {
+                FeedMatch::Unique(peer) => {
+                    simultaneous_identity(peer, &decisions, &candidates, &next)
+                }
+                _ => None,
+            };
             let identity_confidence = matched.and_then(|index| {
                 candidates[index]
                     .participant
@@ -150,15 +161,29 @@ impl Tracker {
                     timestamp,
                 ),
             };
-            let uncertain = candidate.is_some_and(|sample| sample.uncertain)
+            let unclear_stage =
+                matches!(feed, FeedMatch::Ambiguous) && tile.role == TileRole::Primary;
+            if unclear_stage {
+                ambiguous_stages.push(row);
+            }
+            let uncertain = unclear_stage
+                || candidate.is_some_and(|sample| sample.uncertain)
                 || (duplicate.is_none() && decision.ambiguous)
                 || tile.kind == TileKind::Unknown;
             let mut possible_matches = decision.possible.clone();
             if let Some(candidate) = candidate.filter(|sample| sample.uncertain) {
                 for alternative in &candidate.alternatives {
-                    if !possible_matches
-                        .iter()
-                        .any(|option| option.participant_id == alternative.participant_id)
+                    // Inherit only identities that can still be reviewed by
+                    // the bounded tracker after a long, ambiguous sequence.
+                    let id = alternative.participant_id;
+                    if (self.dormant.contains_key(&id)
+                        || self
+                            .active
+                            .iter()
+                            .any(|sample| sample.participant == Some(id)))
+                        && !possible_matches
+                            .iter()
+                            .any(|option| option.participant_id == alternative.participant_id)
                     {
                         possible_matches.push(alternative.clone());
                     }
@@ -203,6 +228,29 @@ impl Tracker {
                 identity_uncertain: uncertain,
                 possible_matches,
             });
+        }
+
+        for stage in ambiguous_stages {
+            for (peer, tile) in tiles.iter().enumerate() {
+                if !similar_cross_role(&tiles[stage], tile) || next[peer].uncertain {
+                    continue;
+                }
+                let Some(id) = next[peer].participant else {
+                    continue;
+                };
+                if !regions[stage]
+                    .possible_matches
+                    .iter()
+                    .any(|option| option.participant_id == id)
+                {
+                    let option = IdentityMatch {
+                        participant_id: id,
+                        confidence: REVIEW_MATCH as f32 / 1000.0,
+                    };
+                    next[stage].alternatives.push(option.clone());
+                    regions[stage].possible_matches.push(option);
+                }
+            }
         }
 
         if self.has_baseline {
@@ -393,6 +441,66 @@ fn could_be(sample: &Sample, participant: ParticipantId) -> bool {
                 .any(|option| option.participant_id == participant))
 }
 
+/// A disappearing gutter can make a detector report adjacent slots as one
+/// video. A genuine reflow can also enlarge a tile, so preserve strong visual
+/// continuity and review boxes that span several old slots without it.
+fn review_merged_slots(
+    tiles: &[Tile],
+    candidates: &[&Sample],
+    active_count: usize,
+    decisions: &mut [Decision],
+) {
+    if active_count < 2 {
+        return;
+    }
+    for (tile, decision) in tiles.iter().zip(decisions) {
+        if tile.kind != TileKind::Video {
+            continue;
+        }
+        let area = tile.rect.width * tile.rect.height;
+        if let Some(prior) = decision.matched.map(|i| candidates[i]) {
+            if prior.tile.rect.width * prior.tile.rect.height > 0.75 * area
+                || (prior.tile.kind == TileKind::Video
+                    && appearance_distance(&prior.tile.descriptor, &tile.descriptor)
+                        <= 2.0 * FEED_DISTANCE)
+            {
+                continue;
+            }
+        }
+        let mut occupied = 0.0;
+        let mut occupants = Vec::new();
+        for prior in &candidates[..active_count] {
+            let Some(id) = prior.participant else {
+                continue;
+            };
+            let rect = prior.tile.rect;
+            let fraction = rect.width * rect.height / area;
+            // A fully contained old slot has IoU equal to its area fraction.
+            if (0.15..=0.75).contains(&fraction) && tile.rect.overlap(rect) >= 0.85 * fraction {
+                occupied += fraction;
+                occupants.push(id);
+            }
+        }
+        if occupied < 0.8 || occupants.len() < 2 {
+            continue;
+        }
+        decision.matched = None;
+        decision.ambiguous = true;
+        for id in occupants {
+            if !decision
+                .possible
+                .iter()
+                .any(|option| option.participant_id == id)
+            {
+                decision.possible.push(IdentityMatch {
+                    participant_id: id,
+                    confidence: REVIEW_MATCH as f32 / 1000.0,
+                });
+            }
+        }
+    }
+}
+
 /// A camera-off card provides no visual link to a missing video. Across a
 /// reflow, the previously unseen card could represent any absent participant.
 /// Exclude feeds that were actually recognized elsewhere in the frame.
@@ -485,6 +593,15 @@ fn score(tile: &Tile, candidate: &Sample, active: bool) -> i32 {
             };
         }
     }
+    // An unresolved card has only position to offer when its video returns.
+    // Preserve provisional continuity, but let independently recognized video win.
+    if tile.kind == TileKind::Video && prior.kind == TileKind::CameraOff && candidate.uncertain {
+        return if active && spatial >= 0.9 {
+            UNMATCHED + 1
+        } else {
+            0
+        };
+    }
     if tile.kind == TileKind::Unknown || prior.kind == TileKind::Unknown {
         return if active { (650.0 * spatial) as i32 } else { 0 };
     }
@@ -513,30 +630,11 @@ fn visual_score(left: &[f32], right: &[f32]) -> f32 {
 }
 
 fn simultaneous_identity(
-    row: usize,
-    tiles: &[Tile],
+    index: usize,
     decisions: &[Decision],
     candidates: &[&Sample],
     assigned: &[Sample],
 ) -> Option<ParticipantId> {
-    let tile = &tiles[row];
-    if tile.kind != TileKind::Video {
-        return None;
-    }
-    let mut compatible = tiles
-        .iter()
-        .enumerate()
-        .filter(|(_, other)| same_feed(tile, other));
-    let (index, _) = compatible.next()?;
-    if compatible.next().is_some()
-        || tiles
-            .iter()
-            .filter(|other| same_feed(&tiles[index], other))
-            .count()
-            != 1
-    {
-        return None;
-    }
     if let Some(sample) = assigned.get(index) {
         return (!sample.uncertain).then_some(sample.participant).flatten();
     }
@@ -548,11 +646,104 @@ fn simultaneous_identity(
     })
 }
 
-fn same_feed(tile: &Tile, other: &Tile) -> bool {
-    other.kind == TileKind::Video
+/// If a stage switches to the exact picture of a continuously observed
+/// thumbnail, the old stage occupant must not win on slot overlap alone.
+fn reconcile_stage_switches(
+    tiles: &[Tile],
+    candidates: &[&Sample],
+    active_count: usize,
+    decisions: &mut [Decision],
+) {
+    if !tiles.iter().any(|tile| tile.role == TileRole::Thumbnail) {
+        return;
+    }
+    for (row, stage) in tiles.iter().enumerate() {
+        if stage.kind != TileKind::Video || stage.role != TileRole::Primary {
+            continue;
+        }
+        let Some(previous) = decisions[row].matched.map(|i| candidates[i]) else {
+            continue;
+        };
+        if appearance_distance(&previous.tile.descriptor, &stage.descriptor) <= 2.0 * FEED_DISTANCE
+        {
+            continue;
+        }
+        let FeedMatch::Unique(peer) = feed_partner(row, tiles) else {
+            continue;
+        };
+        let Some(index) = decisions[peer].matched.filter(|&i| i < active_count) else {
+            continue;
+        };
+        let anchor = candidates[index];
+        if !anchor.uncertain
+            && anchor.tile.kind == TileKind::Video
+            && anchor.tile.role == TileRole::Thumbnail
+            && anchor.tile.rect.overlap(tiles[peer].rect) >= 0.9
+            && anchor.participant != previous.participant
+            && appearance_distance(&anchor.tile.descriptor, &tiles[peer].descriptor) < FEED_DISTANCE
+        {
+            // The stage gets a new appearance on the thumbnail's track.
+            decisions[row].matched = None;
+        }
+    }
+}
+
+const FEED_DISTANCE: f32 = 0.035;
+
+fn similar_cross_role(tile: &Tile, other: &Tile) -> bool {
+    tile.kind == TileKind::Video
+        && other.kind == TileKind::Video
         && other.role != tile.role
         && other.rect.overlap(tile.rect) < 0.1
-        && appearance_distance(&tile.descriptor, &other.descriptor) < 0.035
+        && appearance_distance(&tile.descriptor, &other.descriptor) < FEED_DISTANCE
+}
+
+fn spatial_contrast(tile: &Tile) -> f32 {
+    let Some(grid) = tile.descriptor.get(..48) else {
+        return 0.0;
+    };
+    let mut mean = [0.0; 3];
+    for pixel in grid.chunks_exact(3) {
+        for (channel, &value) in pixel.iter().enumerate() {
+            mean[channel] += value / 16.0;
+        }
+    }
+    (grid
+        .iter()
+        .enumerate()
+        .map(|(i, value)| (value - mean[i % 3]).powi(2))
+        .sum::<f32>()
+        / 48.0)
+        .sqrt()
+}
+
+enum FeedMatch {
+    None,
+    Unique(usize),
+    Ambiguous,
+}
+
+fn feed_partner(row: usize, tiles: &[Tile]) -> FeedMatch {
+    let tile = &tiles[row];
+    let mut similar = tiles
+        .iter()
+        .enumerate()
+        .filter(|(_, other)| similar_cross_role(tile, other));
+    let Some((peer, other)) = similar.next() else {
+        return FeedMatch::None;
+    };
+    // A flat color gives no spatial evidence of a duplicated camera feed.
+    if similar.next().is_some()
+        || spatial_contrast(tile).min(spatial_contrast(other)) < FEED_DISTANCE
+        || tiles
+            .iter()
+            .filter(|tile| similar_cross_role(other, tile))
+            .count()
+            != 1
+    {
+        return FeedMatch::Ambiguous;
+    }
+    FeedMatch::Unique(peer)
 }
 
 #[cfg(test)]
@@ -735,9 +926,11 @@ mod tests {
     #[test]
     fn one_participant_can_hold_primary_and_thumbnail() {
         let mut tracker = Tracker::default();
-        let stage = tile(0.0, 0.0, 0.65, 0.2);
+        let mut stage = tile(0.0, 0.0, 0.65, 0.2);
+        stage.descriptor[12..24].fill(0.75);
         let mut thumbnail = tile(0.75, 0.6, 0.25, 0.2);
         thumbnail.role = TileRole::Thumbnail;
+        thumbnail.descriptor.clone_from(&stage.descriptor);
         let mut share = tile(0.0, 0.0, 0.75, 0.95);
         share.kind = TileKind::ScreenShare;
         push(&mut tracker, 0, vec![stage.clone(), thumbnail.clone()]);
@@ -749,5 +942,114 @@ mod tests {
         assert_eq!(second[0].participant_id, None);
         assert_eq!(first[1].appearance_id, second[1].appearance_id);
         assert!(tracker.events.is_empty());
+    }
+
+    #[test]
+    fn unidentifiable_camera_cards_remain_provisional_until_the_video_returns() {
+        let mut tracker = Tracker::default();
+        let alice = tile(0.0, 0.0, 0.4, 0.2);
+        let bob = tile(0.5, 0.0, 0.4, 0.8);
+        let mut left = tile(0.0, 0.5, 0.4, 0.5);
+        left.kind = TileKind::CameraOff;
+        let mut right = left.clone();
+        right.rect.x = 0.5;
+        push(&mut tracker, 0, vec![alice.clone(), bob.clone()]);
+        push(&mut tracker, 1, vec![left.clone(), right.clone()]);
+        push(&mut tracker, 2, vec![left, right]);
+        for frame in &tracker.observations[1..] {
+            for card in &frame.regions {
+                assert!(card.identity_uncertain);
+                for id in [1, 2] {
+                    assert!(
+                        card.possible_matches
+                            .iter()
+                            .any(|option| option.participant_id == id)
+                    );
+                }
+            }
+        }
+        assert!(tracker.events.iter().all(|event| event.uncertain));
+        let mut alice = alice;
+        let mut bob = bob;
+        alice.rect.y = 0.5;
+        bob.rect.y = 0.5;
+        push(&mut tracker, 3, vec![alice, bob]);
+        for (index, region) in tracker.observations[3].regions.iter().enumerate() {
+            assert_eq!(region.participant_id, Some(index as u64 + 1));
+            assert!(!region.identity_uncertain);
+        }
+    }
+
+    #[test]
+    fn flat_cross_role_feeds_have_no_confirmed_shared_identity() {
+        let mut tracker = Tracker::default();
+        let stage = tile(0.0, 0.0, 0.65, 0.2);
+        let mut thumbnail = tile(0.75, 0.6, 0.25, 0.2);
+        thumbnail.role = TileRole::Thumbnail;
+        push(&mut tracker, 0, vec![stage, thumbnail]);
+        let regions = &tracker.observations[0].regions;
+        assert_ne!(regions[0].participant_id, regions[1].participant_id);
+        assert!(regions[0].identity_uncertain);
+        assert_eq!(
+            regions[0].possible_matches[0].participant_id,
+            regions[1].participant_id.unwrap()
+        );
+    }
+
+    #[test]
+    fn stage_switch_to_a_similar_feed_uses_the_continuing_thumbnail() {
+        let mut tracker = Tracker::default();
+        let view = |offset: f32, role: TileRole| {
+            let mut tile = if role == TileRole::Primary {
+                tile(0.0, 0.0, 0.65, 0.0)
+            } else {
+                tile(0.75, 0.6, 0.25, 0.0)
+            };
+            tile.role = role;
+            tile.descriptor[..48].fill(offset);
+            tile.descriptor[12..24].fill(offset + 0.3);
+            tile
+        };
+        push(
+            &mut tracker,
+            0,
+            vec![
+                view(0.22, TileRole::Primary),
+                view(0.35, TileRole::Thumbnail),
+            ],
+        );
+        push(
+            &mut tracker,
+            1,
+            vec![
+                view(0.31, TileRole::Primary),
+                view(0.34, TileRole::Thumbnail),
+            ],
+        );
+        let old = &tracker.observations[0].regions;
+        let now = &tracker.observations[1].regions;
+        assert_ne!(old[0].participant_id, old[1].participant_id);
+        assert_eq!(now[0].participant_id, old[1].participant_id);
+        assert_ne!(now[0].appearance_id, old[0].appearance_id);
+        assert_eq!(now[1].appearance_id, old[1].appearance_id);
+    }
+    #[test]
+    fn a_weak_match_to_two_merged_slots_never_confirms_a_resize_or_move() {
+        let mut tracker = Tracker::default();
+        let left = tile(0.0, 0.0, 0.4, 0.2);
+        let right = tile(0.4, 0.0, 0.4, 0.8);
+        let mut merged = tile(0.0, 0.0, 0.4, 0.26);
+        merged.rect.width = 0.8;
+        push(&mut tracker, 0, vec![left.clone(), right.clone()]);
+        push(&mut tracker, 1, vec![merged]);
+        let region = &tracker.observations[1].regions[0];
+        assert!(region.identity_uncertain);
+        assert_eq!(region.possible_matches.len(), 2);
+        assert!(tracker.events.iter().all(|event| event.uncertain));
+        push(&mut tracker, 2, vec![left, right]);
+        for (index, region) in tracker.observations[2].regions.iter().enumerate() {
+            assert_eq!(region.participant_id, Some(index as u64 + 1));
+            assert!(!region.identity_uncertain);
+        }
     }
 }

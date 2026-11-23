@@ -1,3 +1,6 @@
+#[path = "vision/overlay.rs"]
+mod overlay;
+
 use crate::{Frame, PixelFormat, Rect, Rotation, TileKind, TileRole};
 
 const SAMPLE_LIMIT: u32 = 256;
@@ -162,11 +165,15 @@ fn matte_color(image: &Measurements, bounds: Bounds) -> Option<[u8; 3]> {
             }
         }
     }
+    let dark_support = buckets[0];
     let (index, support) = buckets
         .into_iter()
         .enumerate()
         .max_by_key(|(_, count)| *count)?;
     let perimeter = 2 * (bounds.right + bounds.bottom);
+    if dark_support * 6 >= perimeter {
+        return Some([3; 3]);
+    }
     if support * 10 >= perimeter {
         return Some([(index * 8 + 3) as u8; 3]);
     }
@@ -228,6 +235,89 @@ fn trim_matte(image: &Measurements, mut bounds: Bounds, matte: [u8; 3]) -> Bound
     bounds
 }
 
+// Controls can cover the middle of a gallery gutter. Require the matte to
+// continue across most of the line, including both outer thirds.
+fn gutter_line(
+    image: &Measurements,
+    matte: [u8; 3],
+    horizontal: bool,
+    line: usize,
+    start: usize,
+    end: usize,
+) -> bool {
+    let length = end - start;
+    let probes = [1, 3, 5, 7].map(|i| start + i * length / 8);
+    if probes
+        .iter()
+        .all(|&i| color_gap(image.at_line(horizontal, line, i), matte) > 9)
+    {
+        return false;
+    }
+    let mut outside = 0;
+    let mut ends = [0; 2];
+    for i in start..end {
+        if color_gap(image.at_line(horizontal, line, i), matte) > 9 {
+            outside += 1;
+            if outside * 3 > length {
+                return false;
+            }
+        } else if i < start + length / 3 {
+            ends[0] += 1;
+        } else if i >= end - length / 3 {
+            ends[1] += 1;
+        }
+    }
+    ends.into_iter().all(|n| n * 7 >= length)
+}
+
+// Probe a fixed lattice so the cost of identifying large, nearly uniform
+// presentation backgrounds and application panels is independent of area.
+#[derive(Default)]
+struct Surface {
+    document: bool,
+    sidebar: bool,
+    dark_canvas: bool,
+}
+
+fn surface(image: &Measurements, bounds: Bounds) -> Surface {
+    let w = bounds.right - bounds.left;
+    let h = bounds.bottom - bounds.top;
+    let mut whites = [0; 8];
+    let mut dark = [0; 16];
+    let mut ink = 0;
+    let mut count = 0;
+    for y in (bounds.top..bounds.bottom).step_by((h / 20).max(1)) {
+        for x in (bounds.left..bounds.right).step_by((w / 24).max(1)) {
+            let pixel = image.at(x, y);
+            let high = *pixel.iter().max().unwrap();
+            let low = *pixel.iter().min().unwrap();
+            if low >= 192
+                && high - low <= 24
+                && color_gap(pixel, image.at((x + 1).min(bounds.right - 1), y)) <= 4
+            {
+                whites[usize::from(low - 192) / 8] += 1;
+            }
+            if high <= 63 && high - low <= 10 {
+                dark[usize::from(high) / 4] += 1;
+            }
+            ink += usize::from(high < 170);
+            count += 1;
+        }
+    }
+    let white = whites
+        .windows(2)
+        .map(|pair| pair[0] + pair[1])
+        .max()
+        .unwrap_or(0);
+    let dark_total: usize = dark.iter().sum();
+    let dark_levels = dark.iter().filter(|&&n| n * 10 >= count).count();
+    Surface {
+        document: white * 100 >= count * 56 && ink * 100 >= count,
+        dark_canvas: dark.iter().take(3).sum::<usize>() * 100 >= count * 56 && dark_total < count,
+        sidebar: dark_total * 100 >= count * 88 && dark_levels >= 2,
+    }
+}
+
 #[derive(Clone, Copy)]
 struct Split {
     first: Bounds,
@@ -254,7 +344,7 @@ fn best_split(image: &Measurements, bounds: Bounds, matte: Option<[u8; 3]>) -> O
             let mut gutter_end = line;
             if let Some(matte) = matte {
                 while gutter_end < end - min_extent
-                    && matte_line(image, matte, horizontal, gutter_end, cross_start, cross_end)
+                    && gutter_line(image, matte, horizontal, gutter_end, cross_start, cross_end)
                 {
                     gutter_end += 1;
                 }
@@ -279,25 +369,32 @@ fn best_split(image: &Measurements, bounds: Bounds, matte: Option<[u8; 3]>) -> O
             } else {
                 let mut support = 0;
                 let mut salient = 0;
+                let max_misses = (cross_end - cross_start) * 22 / 100;
                 for i in cross_start..cross_end {
                     let a = image.at_line(horizontal, line - 1, i);
                     let b = image.at_line(horizontal, line, i);
                     let gap = color_gap(a, b);
-                    support += usize::from(gap >= 22);
-                    if gap >= 26 {
+                    if gap >= 14 {
+                        support += 1;
                         let nearby = color_gap(a, image.at_line(horizontal, line - 2, i))
                             .max(color_gap(b, image.at_line(horizontal, line + 1, i)));
-                        salient += usize::from(gap.saturating_sub(nearby) >= 12);
+                        salient += usize::from(gap.saturating_sub(nearby) >= 8);
+                    } else if i + 1 - cross_start - support > max_misses {
+                        break;
                     }
                 }
                 let length = (cross_end - cross_start) as f32;
-                if support as f32 / length < 0.76 {
+                if support as f32 / length < 0.78 {
                     0.0
                 } else {
-                    salient as f32 / length
+                    0.65 * salient as f32 / length + 0.35 * support as f32 / length
                 }
             };
-            if score >= 0.70 {
+            let small_side = (line - start).min(end - gutter_end);
+            let thin_band = small_side * 3 < cross_end - cross_start
+                && (end - start) * 2 < (cross_end - cross_start) * 5
+                && small_side * 3 < end - start;
+            if score >= 0.72 && !(thin_band && line == gutter_end) {
                 let balance = (line - start).min(end - gutter_end) as f32 / (end - start) as f32;
                 let candidate = Split {
                     first: bounds.with_extent(horizontal, start, line),
@@ -334,6 +431,7 @@ fn describe(image: &Measurements, bounds: Bounds) -> (Vec<f32>, TileKind, bool) 
     };
     let mut descriptor = Vec::with_capacity(DESCRIPTOR_VALUES);
     let mut histogram = [[0_u32; HISTOGRAM_BINS]; 3];
+    let mut dark_levels = [0_u32; 32];
     let mut neutral = 0;
     let mut bright_neutral = 0;
     for grid_y in 0..GRID_SIZE {
@@ -360,6 +458,9 @@ fn describe(image: &Measurements, bounds: Bounds) -> (Vec<f32>, TileKind, bool) 
                     if has_pixels {
                         let max = *pixel.iter().max().unwrap();
                         let min = *pixel.iter().min().unwrap();
+                        if max - min <= 8 && max < 128 {
+                            dark_levels[usize::from(max) / 4] += 1;
+                        }
                         neutral += usize::from(max - min <= 12);
                         bright_neutral += usize::from(min >= 180 && max - min <= 20);
                     }
@@ -375,9 +476,27 @@ fn describe(image: &Measurements, bounds: Bounds) -> (Vec<f32>, TileKind, bool) 
         bins.windows(2)
             .any(|pair| (pair[0] + pair[1]) * 100 >= histogram_size * 88)
     });
-    let kind = if flat
-        && neutral as f32 / histogram_size as f32 >= 0.85
-        && bright_neutral as f32 / histogram_size as f32 <= 0.5
+    let solid_card = dark_levels.windows(2).enumerate().any(|(level, pair)| {
+        if (pair[0] + pair[1]) * 100 < histogram_size * 48 {
+            return false;
+        }
+        // Pillarboxed portrait video also has large matching dark side bars.
+        // An avatar card shows its background above or below the central icon.
+        let background = [(level * 4 + 4) as u8; 3];
+        let vertical = (0..height)
+            .step_by(2)
+            .filter(|&y| color_gap(display_pixel(width / 2, y), background) <= 8)
+            .count();
+        let horizontal = (0..width)
+            .step_by(2)
+            .filter(|&x| color_gap(display_pixel(x, height / 2), background) <= 8)
+            .count();
+        vertical * 12 >= height && horizontal * 12 >= width
+    });
+    let kind = if solid_card
+        || flat
+            && neutral as f32 / histogram_size as f32 >= 0.85
+            && bright_neutral as f32 / histogram_size as f32 <= 0.5
     {
         TileKind::CameraOff
     } else {
@@ -424,12 +543,39 @@ pub(crate) fn detect(image: &Measurements) -> Detection {
     let matte = matte_color(image, whole_frame);
     let mut pending = vec![(whole_frame, 1.0_f32)];
     let mut regions = Vec::new();
+    let mut side_panels = Vec::new();
+    let canvas = surface(image, whole_frame);
+    let overlay = (canvas.document || canvas.dark_canvas)
+        .then(|| overlay::find(image, whole_frame))
+        .flatten();
+    let has_overlay = overlay.is_some();
+    if let Some(strip) = overlay {
+        pending.clear();
+        if canvas.document {
+            let stage = strip.stage(image, whole_frame, matte);
+            if stage.area() > 0 {
+                regions.push((stage, 0.86, true));
+            }
+        }
+        regions.extend(strip.tiles.into_iter().filter_map(|bounds| {
+            let tile = matte.map_or(bounds, |color| trim_matte(image, bounds, color));
+            (tile.area() > 0).then_some((tile, 0.85, false))
+        }));
+    }
     while let Some((bounds, confidence)) = pending.pop() {
         let trimmed = matte.map_or(bounds, |color| trim_matte(image, bounds, color));
         if trimmed.area() == 0 {
             continue;
         }
-        if pending.len() + regions.len() + 1 < MAX_TILES {
+        let surface = surface(image, trimmed);
+        let side_panel = trimmed.bottom - trimmed.top >= whole_frame.bottom * 9 / 10
+            && (trimmed.right == whole_frame.right || trimmed.left == 0)
+            && (trimmed.right - trimmed.left) * 2 < whole_frame.right;
+        if surface.sidebar && side_panel {
+            side_panels.push((trimmed, confidence, false));
+            continue;
+        }
+        if !surface.document && pending.len() + regions.len() + side_panels.len() + 1 < MAX_TILES {
             if let Some(split) = best_split(image, trimmed, matte) {
                 let confidence = confidence.min(split.score);
                 pending.push((split.second, confidence));
@@ -437,24 +583,43 @@ pub(crate) fn detect(image: &Measurements) -> Detection {
                 continue;
             }
         }
-        regions.push((trimmed, confidence));
+        regions.push((trimmed, confidence, surface.document));
+    }
+
+    // A tall, dark panel alone is ambiguous. Suppress it only beside a
+    // two-dimensional gallery, so a dark portrait in a two-up call survives.
+    let gallery = !side_panels.is_empty()
+        && regions.len() >= 4
+        && regions.iter().any(|(a, _, _)| {
+            regions
+                .iter()
+                .any(|(b, _, _)| a.right <= b.left || b.right <= a.left)
+                && regions
+                    .iter()
+                    .any(|(b, _, _)| a.bottom <= b.top || b.bottom <= a.top)
+        });
+    if !gallery {
+        regions.extend(side_panels);
     }
 
     let largest = regions
         .iter()
-        .map(|(bounds, _)| bounds.area())
+        .map(|(bounds, _, _)| bounds.area())
         .max()
         .unwrap_or(0);
     let stage_layout = regions.len() > 1
         && regions
             .iter()
-            .any(|(bounds, _)| bounds.area() * 3 <= largest);
+            .any(|(bounds, _, _)| bounds.area() * 3 <= largest);
     let solo = regions.len() == 1;
     let mut tiles: Vec<_> = regions
         .into_iter()
-        .map(|(bounds, confidence)| {
+        .map(|(bounds, confidence, document)| {
             let (descriptor, mut kind, presentation_hint) = describe(image, bounds);
-            let role = if stage_layout && bounds.area() * 3 <= largest {
+            if document {
+                kind = TileKind::ScreenShare;
+            }
+            let role = if has_overlay && !document || stage_layout && bounds.area() * 3 <= largest {
                 TileRole::Thumbnail
             } else {
                 if stage_layout && bounds.area() == largest && presentation_hint {
@@ -619,6 +784,48 @@ mod tests {
         assert_eq!(result.tiles[0].role, TileRole::Primary);
         assert_eq!(result.tiles[1].role, TileRole::Thumbnail);
         assert_eq!(result.tiles[2].role, TileRole::Thumbnail);
+    }
+
+    #[test]
+    fn filmstrip_over_a_document_preserves_the_partial_stack() {
+        let image = scene(&[
+            (0, 0, 160, 96, [245; 3]),
+            (10, 38, 52, 3, GRAY),
+            (128, 0, 32, 18, RED),
+            (128, 18, 32, 18, GREEN),
+            (128, 36, 32, 18, BLUE),
+        ]);
+        let result = detect(&image);
+        assert_eq!(result.tiles.len(), 4);
+        assert_eq!(result.tiles[0].kind, TileKind::ScreenShare);
+        for (index, tile) in result.tiles[1..].iter().enumerate() {
+            assert_eq!(tile.role, TileRole::Thumbnail);
+            assert_box(tile, [0.8, (index * 18) as f32 / 96.0, 0.2, 18.0 / 96.0]);
+        }
+    }
+
+    #[test]
+    fn central_avatar_and_pillarboxed_video_have_distinct_backgrounds() {
+        let image = scene(&[
+            (0, 0, 78, 96, [36; 3]),
+            (16, 25, 46, 46, RED),
+            (82, 0, 78, 96, [36; 3]),
+            (107, 0, 28, 96, GREEN),
+        ]);
+        let card = Bounds {
+            left: 0,
+            top: 0,
+            right: 78,
+            bottom: 96,
+        };
+        let portrait = Bounds {
+            left: 82,
+            top: 0,
+            right: 160,
+            bottom: 96,
+        };
+        assert_eq!(describe(&image, card).1, TileKind::CameraOff);
+        assert_eq!(describe(&image, portrait).1, TileKind::Video);
     }
 
     #[test]

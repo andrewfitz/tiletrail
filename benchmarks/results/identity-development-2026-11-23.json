@@ -1,0 +1,148 @@
+{
+  "capture_date": "2026-11-23",
+  "input": "Four synthetic development cases, RGB24 at 960x540, 10 fps; one complete pass per case with the CPU backend",
+  "comparison": "Identical pre-pass CPU detector, scorer, inputs, and compiler for both releases. Only src/tracker.rs changed. This isolates identity changes from concurrent geometry work.",
+  "before": {
+    "sha256": {
+      "executable": "cef9f116e9e20e27e7afb2ac4030ee4b6e989ebab5105efbb408c8548024c1af",
+      "tracker_rs": "3e048a8fa7ffe0c5c36b98b4204ce0606f7f3fa80e876d1ac02cd0131261bb54",
+      "vision_rs": "930edd08183461c0aaee33ff920b6eef022222f20654ff1669e977d81aee9b50"
+    },
+    "clips": {
+      "interview": {
+        "source_frames": 44,
+        "identity_comparisons": 76,
+        "confirmed_wrong_identity_links": 0,
+        "confirmed_fragmented_identity_links": 0,
+        "uncertain_identity_links": 0,
+        "expected_returns": 2,
+        "unmatched_returns": 0,
+        "expected_events": 7,
+        "false_confirmed_events": 0,
+        "missed_events": 0,
+        "uncertain_events": 0,
+        "event_precision_within_one_frame": 1.0,
+        "event_recall_within_one_frame": 1.0
+      },
+      "gallery": {
+        "source_frames": 52,
+        "identity_comparisons": 302,
+        "confirmed_wrong_identity_links": 0,
+        "confirmed_fragmented_identity_links": 20,
+        "uncertain_identity_links": 0,
+        "expected_returns": 4,
+        "unmatched_returns": 1,
+        "expected_events": 29,
+        "false_confirmed_events": 6,
+        "missed_events": 4,
+        "uncertain_events": 5,
+        "event_precision_within_one_frame": 0.8065,
+        "event_recall_within_one_frame": 0.8621
+      },
+      "stage_and_share": {
+        "source_frames": 45,
+        "identity_comparisons": 144,
+        "confirmed_wrong_identity_links": 0,
+        "confirmed_fragmented_identity_links": 0,
+        "uncertain_identity_links": 0,
+        "expected_returns": 0,
+        "unmatched_returns": 0,
+        "expected_events": 7,
+        "false_confirmed_events": 8,
+        "missed_events": 0,
+        "uncertain_events": 2,
+        "event_precision_within_one_frame": 0.4667,
+        "event_recall_within_one_frame": 1.0
+      },
+      "speech_control": {
+        "source_frames": 24,
+        "identity_comparisons": 48,
+        "confirmed_wrong_identity_links": 0,
+        "confirmed_fragmented_identity_links": 0,
+        "uncertain_identity_links": 0,
+        "expected_returns": 0,
+        "unmatched_returns": 0,
+        "expected_events": 0,
+        "false_confirmed_events": 0,
+        "missed_events": 0,
+        "uncertain_events": 0,
+        "event_precision_within_one_frame": null,
+        "event_recall_within_one_frame": null
+      }
+    }
+  },
+  "after": {
+    "sha256": {
+      "executable": "6830c1aa41ff6cb874243c92da549f1466979cc39ceb61c1460ebe0e61016b57",
+      "tracker_rs": "cc26c01a0fb4256b440a2af981ffdea7d08e467a1deb23519d21ba5725600586",
+      "vision_rs": "930edd08183461c0aaee33ff920b6eef022222f20654ff1669e977d81aee9b50"
+    },
+    "clips": {
+      "interview": {
+        "source_frames": 44,
+        "identity_comparisons": 76,
+        "confirmed_wrong_identity_links": 0,
+        "confirmed_fragmented_identity_links": 0,
+        "uncertain_identity_links": 0,
+        "expected_returns": 2,
+        "unmatched_returns": 0,
+        "expected_events": 7,
+        "false_confirmed_events": 0,
+        "missed_events": 0,
+        "uncertain_events": 0,
+        "event_precision_within_one_frame": 1.0,
+        "event_recall_within_one_frame": 1.0
+      },
+      "gallery": {
+        "source_frames": 52,
+        "identity_comparisons": 302,
+        "confirmed_wrong_identity_links": 0,
+        "confirmed_fragmented_identity_links": 0,
+        "uncertain_identity_links": 20,
+        "expected_returns": 4,
+        "unmatched_returns": 1,
+        "expected_events": 29,
+        "false_confirmed_events": 0,
+        "missed_events": 6,
+        "uncertain_events": 13,
+        "event_precision_within_one_frame": 1.0,
+        "event_recall_within_one_frame": 0.7931
+      },
+      "stage_and_share": {
+        "source_frames": 45,
+        "identity_comparisons": 144,
+        "confirmed_wrong_identity_links": 0,
+        "confirmed_fragmented_identity_links": 0,
+        "uncertain_identity_links": 0,
+        "expected_returns": 0,
+        "unmatched_returns": 0,
+        "expected_events": 7,
+        "false_confirmed_events": 8,
+        "missed_events": 0,
+        "uncertain_events": 2,
+        "event_precision_within_one_frame": 0.4667,
+        "event_recall_within_one_frame": 1.0
+      },
+      "speech_control": {
+        "source_frames": 24,
+        "identity_comparisons": 48,
+        "confirmed_wrong_identity_links": 0,
+        "confirmed_fragmented_identity_links": 0,
+        "uncertain_identity_links": 0,
+        "expected_returns": 0,
+        "unmatched_returns": 0,
+        "expected_events": 0,
+        "false_confirmed_events": 0,
+        "missed_events": 0,
+        "uncertain_events": 0,
+        "event_precision_within_one_frame": null,
+        "event_recall_within_one_frame": null
+      }
+    }
+  },
+  "interpretation": [
+    "The gallery reflow introduces two visually identical camera-off cards. A participant can either have left or be represented by a card, so those links and dependent events require review.",
+    "A collapsed gutter can combine two prior participants into one weakly matched rectangle. The guard keeps merged-region identity and consequent motion events provisional.",
+    "The detector and ground-truth participant associations in this comparison leave one camera-off return unresolved."
+  ]
+}
