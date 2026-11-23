@@ -1,4 +1,4 @@
-//! Analyze participant tiles in timestamped, caller-decoded video frames.
+//! Analyze feed regions in timestamped, caller-decoded video frames.
 //!
 //! Feed packed frames in increasing presentation order. Each call borrows its
 //! pixels only for the duration of that call. The analyzer keeps measurements
@@ -30,6 +30,7 @@ const MIN_LAYOUT_CONFIDENCE: f32 = 0.4;
 /// Stateful offline analyzer for one source stream.
 pub struct Analyzer {
     config: AnalyzerConfig,
+    layout: FeedLayout,
     start: Timestamp,
     tracker: Tracker,
     pub(crate) session: BackendSession,
@@ -39,6 +40,15 @@ pub struct Analyzer {
 impl Analyzer {
     /// Start the requested backend at the beginning of the scan.
     pub fn new(config: AnalyzerConfig, start: Timestamp) -> Result<Self, AnalysisError> {
+        Self::with_layout(config, start, FeedLayout::Meeting)
+    }
+
+    /// Start an analyzer with an explicit feed layout.
+    pub fn with_layout(
+        config: AnalyzerConfig,
+        start: Timestamp,
+        layout: FeedLayout,
+    ) -> Result<Self, AnalysisError> {
         if !start.is_valid() {
             return Err(error(
                 ErrorKind::InvalidTimestamp,
@@ -46,14 +56,29 @@ impl Analyzer {
                 start,
             ));
         }
+        if let FeedLayout::Grid { columns, rows } = layout {
+            if !matches!(columns.checked_mul(rows), Some(1..=MAX_GRID_FEEDS)) {
+                return Err(error(
+                    ErrorKind::InvalidRange,
+                    "grid dimensions must describe between 1 and 64 feeds",
+                    start,
+                ));
+            }
+        }
         let session = BackendSession::new(config.mode, start)?;
         Ok(Self {
             config,
+            layout,
             start,
             tracker: Tracker::default(),
             session,
             uncommitted: None,
         })
+    }
+
+    /// Return the configured feed layout.
+    pub fn layout(&self) -> FeedLayout {
+        self.layout
     }
 
     /// Return the backend currently responsible for frame measurements.
@@ -102,11 +127,23 @@ impl Analyzer {
                 error.resume_at = *self.uncommitted.get_or_insert(timestamp);
                 error
             })?;
-        let mut detection = vision::detect(&measurements);
-        self.tracker
-            .verify_thumbnail_subdivision(&measurements, &mut detection);
-        self.tracker
-            .push(&frame, detection, self.config.sampling == Sampling::Sparse);
+        let sparse = self.config.sampling == Sampling::Sparse;
+        match self.layout {
+            FeedLayout::Meeting => {
+                let mut detection = vision::detect(&measurements);
+                self.tracker
+                    .verify_thumbnail_subdivision(&measurements, &mut detection);
+                self.tracker.push(&frame, detection, sparse);
+            }
+            FeedLayout::Automatic => {
+                let detection = vision::detect_feeds(&measurements);
+                self.tracker.push(&frame, detection, sparse);
+            }
+            FeedLayout::Grid { columns, rows } => {
+                let detection = vision::grid_feeds(&measurements, columns, rows);
+                self.tracker.push_grid(&frame, detection, sparse);
+            }
+        }
         self.uncommitted = None;
         Ok(())
     }

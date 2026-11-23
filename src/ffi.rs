@@ -6,8 +6,8 @@ use std::{ptr, slice};
 
 use crate::{
     AnalysisError, AnalysisResult, Analyzer, AnalyzerConfig, BackendMode, DisplayGeometry,
-    ErrorKind, Frame, MarkerRule, PixelFormat, RESULT_SCHEMA_VERSION, Rotation, Sampling, TimeBase,
-    Timestamp,
+    ErrorKind, FeedLayout, Frame, MarkerRule, PixelFormat, RESULT_SCHEMA_VERSION, Rotation,
+    Sampling, TimeBase, Timestamp,
 };
 
 #[repr(C)]
@@ -181,6 +181,32 @@ unsafe extern "C" fn tiletrail_analyzer_create(
     out: *mut *mut AnalyzerHandle,
     error: *mut CError,
 ) -> i32 {
+    create_analyzer(config, start, FeedLayout::Meeting, out, error)
+}
+
+#[unsafe(no_mangle)]
+unsafe extern "C" fn tiletrail_analyzer_create_feeds(
+    config: *const CConfig,
+    start: CTime,
+    columns: u32,
+    rows: u32,
+    out: *mut *mut AnalyzerHandle,
+    error: *mut CError,
+) -> i32 {
+    let layout = match (columns, rows) {
+        (0, 0) => FeedLayout::Automatic,
+        _ => FeedLayout::Grid { columns, rows },
+    };
+    create_analyzer(config, start, layout, out, error)
+}
+
+fn create_analyzer(
+    config: *const CConfig,
+    start: CTime,
+    layout: FeedLayout,
+    out: *mut *mut AnalyzerHandle,
+    error: *mut CError,
+) -> i32 {
     boundary(error, || {
         if out.is_null() {
             return Err(Failure::argument("missing analyzer output"));
@@ -201,7 +227,7 @@ unsafe extern "C" fn tiletrail_analyzer_create(
                 _ => return Err(Failure::argument("unknown sampling policy")),
             };
         }
-        let analyzer = Analyzer::new(options, start.into())?;
+        let analyzer = Analyzer::with_layout(options, start.into(), layout)?;
         let handle = Box::new(AnalyzerHandle {
             analyzer,
             panicked: false,
@@ -400,6 +426,49 @@ mod tests {
         assert_eq!(Timestamp::from(error.resume_at), Timestamp::from(start));
         assert_ne!(error.message[0], 0);
         assert_eq!(error.message[255], 0);
+    }
+
+    #[test]
+    fn feed_constructor_selects_automatic_or_grid_and_clears_invalid_output() {
+        let config = CConfig {
+            mode: 1,
+            sampling: 0,
+        };
+        let start = CTime::from(Timestamp::new(0, 1, 30));
+        let mut error = Failure::default().to_error();
+        for (columns, rows, expected) in [
+            (0, 0, Some(FeedLayout::Automatic)),
+            (
+                3,
+                2,
+                Some(FeedLayout::Grid {
+                    columns: 3,
+                    rows: 2,
+                }),
+            ),
+            (0, 2, None),
+            (u32::MAX, u32::MAX, None),
+        ] {
+            let mut handle = ptr::dangling_mut();
+            let status = unsafe {
+                tiletrail_analyzer_create_feeds(
+                    &config,
+                    start,
+                    columns,
+                    rows,
+                    &mut handle,
+                    &mut error,
+                )
+            };
+            if let Some(layout) = expected {
+                assert_eq!(status, 0);
+                assert_eq!(unsafe { &*handle }.analyzer.layout(), layout);
+                unsafe { tiletrail_analyzer_free(handle) };
+            } else {
+                assert_eq!(status, 3);
+                assert!(handle.is_null());
+            }
+        }
     }
 
     #[test]

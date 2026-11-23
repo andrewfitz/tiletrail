@@ -1,5 +1,9 @@
 #[path = "vision/cards.rs"]
 mod cards;
+#[path = "vision/feed_insets.rs"]
+mod feed_insets;
+#[path = "vision/feeds.rs"]
+mod feeds;
 #[path = "vision/gallery.rs"]
 mod gallery;
 #[path = "vision/junction.rs"]
@@ -10,9 +14,10 @@ mod overlay;
 mod sidebar;
 
 use crate::{Frame, PixelFormat, Rect, Rotation, TileKind, TileRole};
+pub(crate) use feeds::detect_feeds;
 
 const SAMPLE_LIMIT: u32 = 256;
-const MAX_TILES: usize = 64;
+const MAX_TILES: usize = crate::MAX_GRID_FEEDS as usize;
 const GRID_SIZE: usize = 4;
 const GRID_VALUES: usize = GRID_SIZE * GRID_SIZE * 3;
 const HISTOGRAM_BINS: usize = 8;
@@ -337,10 +342,16 @@ fn surface(image: &Measurements, bounds: Bounds) -> Surface {
 struct Split {
     first: Bounds,
     second: Bounds,
+    horizontal: bool,
     score: f32,
 }
 
-fn best_split(image: &Measurements, bounds: Bounds, matte: Option<[u8; 3]>) -> Option<Split> {
+fn best_split(
+    image: &Measurements,
+    bounds: Bounds,
+    matte: Option<[u8; 3]>,
+    require_gutter: bool,
+) -> Option<Split> {
     let mut best: Option<Split> = None;
     for horizontal in [true, false] {
         let (start, end, cross_start, cross_end) = bounds.dimensions(horizontal);
@@ -381,6 +392,8 @@ fn best_split(image: &Measurements, bounds: Bounds, matte: Option<[u8; 3]>) -> O
                 } else {
                     0.0
                 }
+            } else if require_gutter {
+                0.0
             } else {
                 let mut support = 0;
                 let mut salient = 0;
@@ -414,6 +427,7 @@ fn best_split(image: &Measurements, bounds: Bounds, matte: Option<[u8; 3]>) -> O
                 let candidate = Split {
                     first: bounds.with_extent(horizontal, start, line),
                     second: bounds.with_extent(horizontal, gutter_end, end),
+                    horizontal,
                     score: score * 0.87
                         + balance * 0.10
                         + if gutter_end > line { 0.10 } else { 0.0 },
@@ -576,6 +590,82 @@ pub(crate) fn appearance_distance(left: &[f32], right: &[f32]) -> f32 {
     (0.85 * grid_gap + 0.15 * hist_gap).clamp(0.0, 1.0)
 }
 
+fn frame_bounds(image: &Measurements) -> Bounds {
+    Bounds {
+        left: 0,
+        top: 0,
+        right: image.width as usize,
+        bottom: image.height as usize,
+    }
+}
+
+fn feed_tile(image: &Measurements, bounds: Bounds, rect: Rect, confidence: f32) -> Tile {
+    Tile {
+        rect,
+        kind: TileKind::Video,
+        role: TileRole::Primary,
+        descriptor: describe(image, bounds).0,
+        confidence,
+    }
+}
+
+pub(crate) fn grid_feeds(image: &Measurements, columns: u32, rows: u32) -> Detection {
+    // Transform each display cell back into coded coordinates to sample it.
+    // Retain exact display geometry even when the sampling lattice is coarse.
+    let columns = columns as usize;
+    let rows = rows as usize;
+    let width = image.width as usize;
+    let height = image.height as usize;
+    let (display_width, display_height) = match image.rotation {
+        Rotation::R0 | Rotation::R180 => (width, height),
+        Rotation::R90 | Rotation::R270 => (height, width),
+    };
+    let extent = |position: usize, count: usize, size: usize| {
+        let start = position * size / count;
+        let end = ((position + 1) * size / count).max(start + 1);
+        (start, end)
+    };
+    let mut tiles = Vec::with_capacity(columns * rows);
+    for row in 0..rows {
+        for column in 0..columns {
+            let (left, right) = extent(column, columns, display_width);
+            let (top, bottom) = extent(row, rows, display_height);
+            let (left, top, right, bottom) = match image.rotation {
+                Rotation::R0 => (left, top, right, bottom),
+                Rotation::R90 => (top, height - right, bottom, height - left),
+                Rotation::R180 => (width - right, height - bottom, width - left, height - top),
+                Rotation::R270 => (width - bottom, left, width - top, right),
+            };
+            let bounds = Bounds {
+                left,
+                top,
+                right,
+                bottom,
+            };
+            let rect = Rect {
+                x: column as f32 / columns as f32,
+                y: row as f32 / rows as f32,
+                width: 1.0 / columns as f32,
+                height: 1.0 / rows as f32,
+            };
+            tiles.push(feed_tile(image, bounds, rect, 1.0));
+        }
+    }
+    Detection {
+        tiles,
+        confidence: 1.0,
+    }
+}
+
+fn sort_tiles(tiles: &mut [Tile]) {
+    tiles.sort_by(|a, b| {
+        a.rect
+            .y
+            .total_cmp(&b.rect.y)
+            .then(a.rect.x.total_cmp(&b.rect.x))
+    });
+}
+
 pub(crate) fn detect(image: &Measurements) -> Detection {
     if image.width == 0 || image.height == 0 {
         return Detection {
@@ -583,12 +673,7 @@ pub(crate) fn detect(image: &Measurements) -> Detection {
             confidence: 0.0,
         };
     }
-    let whole_frame = Bounds {
-        left: 0,
-        top: 0,
-        right: image.width as usize,
-        bottom: image.height as usize,
-    };
+    let whole_frame = frame_bounds(image);
     let matte = matte_color(image, whole_frame);
     let cards = matte.and_then(|_| cards::find(image, whole_frame));
     let framed_strip = cards.is_some();
@@ -634,7 +719,7 @@ pub(crate) fn detect(image: &Measurements) -> Detection {
             continue;
         }
         if !surface.document && pending.len() + regions.len() + side_panels.len() + 1 < MAX_TILES {
-            if let Some(split) = best_split(image, trimmed, matte) {
+            if let Some(split) = best_split(image, trimmed, matte, false) {
                 let confidence = confidence.min(split.score);
                 pending.push((split.second, confidence));
                 pending.push((split.first, confidence));
@@ -715,12 +800,7 @@ pub(crate) fn detect(image: &Measurements) -> Detection {
             }
         })
         .collect();
-    tiles.sort_by(|a, b| {
-        a.rect
-            .y
-            .total_cmp(&b.rect.y)
-            .then(a.rect.x.total_cmp(&b.rect.x))
-    });
+    sort_tiles(&mut tiles);
     let confidence = tiles
         .iter()
         .map(|tile| tile.confidence)
@@ -1108,6 +1188,7 @@ mod tests {
             }
         }
         let expected = detect(&upright);
+        let expected_grid = grid_feeds(&upright, 3, 2);
         for rotation in [Rotation::R90, Rotation::R180, Rotation::R270] {
             let (stored_width, stored_height) = match rotation {
                 Rotation::R90 | Rotation::R270 => (height, width),
@@ -1136,6 +1217,11 @@ mod tests {
             assert_eq!(result.tiles.len(), 1);
             assert_eq!(result.tiles[0].rect, expected.tiles[0].rect);
             assert_eq!(result.tiles[0].descriptor, expected.tiles[0].descriptor);
+            let grid = grid_feeds(&rotated, 3, 2);
+            for (actual, expected) in grid.tiles.iter().zip(&expected_grid.tiles) {
+                assert_eq!(actual.rect, expected.rect);
+                assert_eq!(actual.descriptor, expected.descriptor);
+            }
         }
     }
 

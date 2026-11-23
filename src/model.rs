@@ -158,8 +158,10 @@ pub enum TileRole {
     Thumbnail,
 }
 
-/// Identity assigned within one analysis. IDs start at one.
-pub type ParticipantId = u64;
+/// Feed identity assigned within one analysis. IDs start at one.
+pub type FeedId = u64;
+/// Meeting-oriented name for a feed identity.
+pub type ParticipantId = FeedId;
 /// Contiguous visual appearance within one analysis. IDs start at one.
 pub type AppearanceId = u64;
 
@@ -184,6 +186,20 @@ pub struct RegionObservation {
     pub possible_matches: Vec<IdentityMatch>,
 }
 
+impl IdentityMatch {
+    /// Return the feed's identity within this analysis.
+    pub fn feed_id(&self) -> FeedId {
+        self.participant_id
+    }
+}
+
+impl RegionObservation {
+    /// Return the feed's identity within this analysis.
+    pub fn feed_id(&self) -> Option<FeedId> {
+        self.participant_id
+    }
+}
+
 /// Detected regions at an actual submitted frame timestamp.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FrameObservation {
@@ -193,12 +209,16 @@ pub struct FrameObservation {
     pub regions: Vec<RegionObservation>,
 }
 
-/// An identity that can own multiple overlapping or successive appearances.
+/// A feed identity that can own multiple overlapping or successive appearances.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct ParticipantTrack {
-    pub id: ParticipantId,
+#[serde(rename = "ParticipantTrack")]
+pub struct FeedTrack {
+    pub id: FeedId,
     pub appearance_ids: Vec<AppearanceId>,
 }
+
+/// Meeting-oriented name for a tracked feed.
+pub type ParticipantTrack = FeedTrack;
 
 /// A half-open range over which one region appearance remains tracked. Query
 /// frame observations for geometry because the bounds can move in this range.
@@ -208,6 +228,13 @@ pub struct Appearance {
     pub participant_id: Option<ParticipantId>,
     pub start: Timestamp,
     pub end: Timestamp,
+}
+
+impl Appearance {
+    /// Return the feed's identity within this analysis.
+    pub fn feed_id(&self) -> Option<FeedId> {
+        self.participant_id
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -228,6 +255,13 @@ pub struct ChangeEvent {
     pub appearance_id: AppearanceId,
     pub kind: ChangeKind,
     pub uncertain: bool,
+}
+
+impl ChangeEvent {
+    /// Return the feed's identity within this analysis.
+    pub fn feed_id(&self) -> FeedId {
+        self.participant_id
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -285,6 +319,22 @@ pub struct BackendDiagnostic {
     pub timestamp: Timestamp,
     pub backend: Backend,
     pub reason: Option<String>,
+}
+
+/// Maximum cell count accepted by a fixed feed grid.
+pub const MAX_GRID_FEEDS: u32 = 64;
+
+/// How the analyzer identifies regions in each frame.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum FeedLayout {
+    /// Detect meeting layouts, including screen shares and camera-off tiles.
+    #[default]
+    Meeting,
+    /// Detect feeds from visual boundaries and track their visual identities.
+    Automatic,
+    /// Divide the displayed frame into equal cells. Feed IDs are one-based
+    /// and row-major, and always identify a position in the grid.
+    Grid { columns: u32, rows: u32 },
 }
 
 #[derive(Clone, Copy, Debug, Default)]
@@ -354,6 +404,11 @@ pub struct AnalysisSnapshot<'a> {
 }
 
 impl AnalysisSnapshot<'_> {
+    /// Return the feed tracks in identity order.
+    pub fn feed_tracks(&self) -> &[FeedTrack] {
+        self.tracks
+    }
+
     /// Copy the borrowed history into an independently owned result.
     pub fn into_owned(self) -> AnalysisResult {
         AnalysisResult {
@@ -373,6 +428,21 @@ impl AnalysisSnapshot<'_> {
 }
 
 impl AnalysisResult {
+    /// Return the feed tracks in identity order.
+    pub fn feed_tracks(&self) -> &[FeedTrack] {
+        &self.tracks
+    }
+
+    /// Return all appearances of a feed intersecting the half-open range.
+    pub fn feed_appearances(
+        &self,
+        feed_id: FeedId,
+        start: Timestamp,
+        end: Timestamp,
+    ) -> impl Iterator<Item = &Appearance> {
+        self.appearances_of(feed_id, start, end)
+    }
+
     /// Find the sampled frame responsible for an instant. Sparse intervals can
     /// carry a prior sample within their covered interval. Use coverage_at to
     /// determine the interval status.

@@ -8,6 +8,7 @@ extern "C" {
 #endif
 
 #define TILETRAIL_ABI_VERSION 1u
+#define TILETRAIL_HAS_FEED_LAYOUTS 1
 
 typedef struct tiletrail_analyzer tiletrail_analyzer_t;
 
@@ -94,6 +95,17 @@ int32_t tiletrail_analyzer_create(const tiletrail_config_t *config,
                                  tiletrail_timestamp_t start,
                                  tiletrail_analyzer_t **out,
                                  tiletrail_error_t *error);
+
+/* Analyze arbitrary video feeds. Pass (0, 0) to detect feed boxes or supply
+ * a positive, uniform grid of up to 64 cells. Columns and rows refer to
+ * display orientation. Each fixed-grid cell keeps its own identity.
+ * The config, output, and error follow tiletrail_analyzer_create.
+ */
+int32_t tiletrail_analyzer_create_feeds(const tiletrail_config_t *config,
+                                       tiletrail_timestamp_t start,
+                                       uint32_t columns, uint32_t rows,
+                                       tiletrail_analyzer_t **out,
+                                       tiletrail_error_t *error);
 
 /* Borrow the frame and its len readable bytes only until this call returns.
  * Rotation is clockwise in degrees (0, 90, 180, 270).

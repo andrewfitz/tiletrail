@@ -271,6 +271,57 @@ impl Tracker {
             }
         }
 
+        self.commit(frame, detection.confidence, sparse, next, regions);
+    }
+
+    pub(crate) fn push_grid(&mut self, frame: &Frame<'_>, detection: Detection, sparse: bool) {
+        let mut next = Vec::with_capacity(detection.tiles.len());
+        let mut regions = Vec::with_capacity(detection.tiles.len());
+        for (index, tile) in detection.tiles.into_iter().enumerate() {
+            let (id, appearance_id) = if let Some(sample) = self.active.get(index) {
+                (sample.participant, sample.appearance)
+            } else {
+                let id = Some(Self::new_participant(&mut self.tracks));
+                let appearance_id = Self::new_appearance(
+                    &mut self.tracks,
+                    &mut self.appearances,
+                    id,
+                    frame.timestamp,
+                );
+                (id, appearance_id)
+            };
+            regions.push(RegionObservation {
+                appearance_id,
+                participant_id: id,
+                rect: tile.rect,
+                kind: tile.kind,
+                role: tile.role,
+                confidence: tile.confidence,
+                identity_confidence: Some(1.0),
+                identity_uncertain: false,
+                possible_matches: Vec::new(),
+            });
+            next.push(Sample {
+                appearance: appearance_id,
+                participant: id,
+                tile,
+                uncertain: false,
+                alternatives: Vec::new(),
+                last_video: None,
+            });
+        }
+        self.commit(frame, detection.confidence, sparse, next, regions);
+    }
+
+    fn commit(
+        &mut self,
+        frame: &Frame<'_>,
+        confidence: f32,
+        sparse: bool,
+        next: Vec<Sample>,
+        regions: Vec<RegionObservation>,
+    ) {
+        let timestamp = frame.timestamp;
         if self.has_baseline {
             self.record_events(timestamp, &next, sparse || self.uncertain_gap);
         }
@@ -292,7 +343,7 @@ impl Tracker {
         self.observations.push(FrameObservation {
             timestamp,
             display: frame.display,
-            confidence: detection.confidence,
+            confidence,
             regions,
         });
     }
