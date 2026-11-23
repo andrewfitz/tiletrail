@@ -21,4 +21,6 @@ python3 validation/feeds/score.py target/release/libtiletrail.dylib
 python3 validation/feeds/score.py target/release/libtiletrail.dylib --meeting
 ```
 
-On Linux, use `target/release/libtiletrail.so`. The scorer uses the CPU through the public C ABI. The sample media stays in the local build directory.
+On Linux, use `target/release/libtiletrail.so`. The scorer uses the CPU through the public C ABI by default. Pass `--gpu` to require hardware acceleration. On Apple Silicon, the CPU and Metal produced identical observations, tracks, appearances, events and coverage on all six clips in automatic mode and again in 2×2 fixed-grid mode. The sample media stays in the local build directory.
+
+The macOS and Linux CPU test suites passed, including the geometry and identity regressions. All eight new feed and inset integration tests also passed in Windows x86-64 GNU executables under Wine. The maximum grid size is a geometry limit. Every-frame scan results retain a region observation for each visible feed in each sampled frame, so long recordings and large grids can require substantial memory.

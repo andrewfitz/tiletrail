@@ -73,13 +73,13 @@ def overlap(box, pred):
     return area / (w * h + pw * ph - area)
 
 
-def score(cache, library, layout):
+def score(cache, library, layout, backend):
     scores = {}
     for name, boxes in CASES.items():
         raw = composite(cache, name, boxes)
         width, height = max(x + w for x, _, w, _ in boxes), max(y + h for _, y, _, h in boxes)
         expected = [(x / width, y / height, w / width, h / height) for x, y, w, h in boxes]
-        frames = json.loads(analyze(library, raw, width, height, 0, 1, 8, layout))["observations"]
+        frames = json.loads(analyze(library, raw, width, height, 0, 1, 8, layout, backend=backend))["observations"]
         if len(frames) != 12:
             raise RuntimeError(f"{name}: expected 12 decoded frames")
         exact, ious, identities = 0, [], []
@@ -107,7 +107,9 @@ if __name__ == "__main__":
     parser.add_argument("library", type=Path)
     parser.add_argument("--cache", type=Path, default=ROOT / "target" / "feed-validation")
     parser.add_argument("--meeting", action="store_true", help="measure the original meeting detector")
+    parser.add_argument("--gpu", action="store_true", help="require hardware acceleration")
     args = parser.parse_args()
     args.cache.mkdir(parents=True, exist_ok=True)
     camera_files(args.cache)
-    print(json.dumps(score(args.cache, load_library(args.library), None if args.meeting else (0, 0)), indent=2))
+    print(json.dumps(score(args.cache, load_library(args.library), None if args.meeting else (0, 0),
+                           2 if args.gpu else 1), indent=2))

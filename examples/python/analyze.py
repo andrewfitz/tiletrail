@@ -90,7 +90,7 @@ def check(status, error):
         raise RuntimeError(f"TileTrail error {status}: {message}")
 
 
-def analyze(library, source, width, height, first_pts, numerator, denominator, feed_layout=None):
+def analyze(library, source, width, height, first_pts, numerator, denominator, feed_layout=None, *, backend=1):
     if not all(0 < value < 2**32 for value in (width, height, numerator, denominator)):
         raise ValueError("dimensions and time base fields must be positive uint32 values")
     if not -(2**63) <= first_pts < 2**63:
@@ -101,7 +101,7 @@ def analyze(library, source, width, height, first_pts, numerator, denominator, f
         raise ValueError("frame size exceeds addressable range")
 
     time = Timestamp(first_pts, numerator, denominator)
-    config = Config(1, 0)  # CPU-only, every frame
+    config = Config(backend, 0)  # Every frame
     analyzer, error, output = c.c_void_p(), Error(), Buffer()
     if feed_layout is None:
         status = library.tiletrail_analyzer_create(c.byref(config), time, c.byref(analyzer), c.byref(error))
@@ -140,6 +140,7 @@ def main():
     for arg in ("width", "height", "first_pts", "tick_numerator", "tick_denominator"):
         parser.add_argument(arg, type=int)
     parser.add_argument("--feed-layout", help="auto or a fixed grid such as 2x2")
+    parser.add_argument("--backend", choices=("cpu", "auto", "gpu"), default="cpu")
     args = parser.parse_args()
     layout = None
     if args.feed_layout == "auto":
@@ -151,7 +152,7 @@ def main():
         layout = tuple(map(int, parts))
     library = load_library(args.library)
     result = analyze(library, args.frames, args.width, args.height, args.first_pts,
-                     args.tick_numerator, args.tick_denominator, layout)
+                     args.tick_numerator, args.tick_denominator, layout, backend={"auto": 0, "cpu": 1, "gpu": 2}[args.backend])
     sys.stdout.buffer.write(result + b"\n")
 
 
