@@ -227,11 +227,23 @@ impl Gpu {
             .as_ref()
             .is_some_and(|workspace| workspace.fits(upload_size, output_size))
         {
+            // A wide input can require more upload space while a square
+            // sample grid requires more output space. Keep both high-water
+            // marks so alternating shapes do not reallocate on every push.
+            let (input_capacity, output_capacity) =
+                self.workspace
+                    .take()
+                    .map_or((upload_size, output_size), |previous| {
+                        (
+                            upload_size.max(previous.input.size()),
+                            output_size.max(previous.output.size()),
+                        )
+                    });
             self.workspace = Some(Workspace::new(
                 &self.device,
                 &self.pipeline,
-                upload_size,
-                output_size,
+                input_capacity,
+                output_capacity,
                 self.shared_buffers,
             ));
         }
@@ -413,7 +425,15 @@ fn metal_staging_reuses_storage_across_frame_dimensions() {
 
     let mut gpu = pollster::block_on(Gpu::initialize(false)).unwrap();
     assert!(!gpu.shared_buffers);
-    for (width, height) in [(479u32, 315u32), (13, 9), (408, 704)] {
+    let mut peak_input = 0;
+    let mut peak_output = 0;
+    for (width, height) in [
+        (479u32, 315u32),
+        (13, 9),
+        (408, 704),
+        (256, 256),
+        (479, 315),
+    ] {
         let stride = width as usize * 3 + 2;
         let source_size = stride * (height as usize - 1) + width as usize * 3;
         let data: Vec<_> = (0..source_size).map(|idx| (idx % 251) as u8).collect();
@@ -427,5 +447,9 @@ fn metal_staging_reuses_storage_across_frame_dimensions() {
             display: DisplayGeometry::default(),
         };
         assert_eq!(gpu.measure(&frame).unwrap(), vision::measure(&frame));
+        let workspace = gpu.workspace.as_ref().unwrap();
+        peak_input = peak_input.max(workspace.input.size());
+        peak_output = peak_output.max(workspace.output.size());
+        assert!(workspace.fits(peak_input, peak_output));
     }
 }

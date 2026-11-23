@@ -38,16 +38,23 @@ pub(crate) fn measure(frame: &Frame<'_>) -> Measurements {
     let sample_at = |i, source, target| {
         (((2 * u64::from(i) + 1) * u64::from(source)) / (2 * u64::from(target))) as usize
     };
+    // Every row uses the same source columns. Compute the exact center
+    // coordinates once, including when only a single sample fits an axis.
+    let mut offsets = [0; SAMPLE_LIMIT as usize];
+    let offsets = &mut offsets[..width as usize];
+    for (x, offset) in offsets.iter_mut().enumerate() {
+        *offset = sample_at(x as u32, frame.width, width) * bytes_per_pixel;
+    }
     for y in 0..height {
-        let row = sample_at(y, frame.height, height) * frame.stride;
-        for x in 0..width {
-            let offset = row + sample_at(x, frame.width, width) * bytes_per_pixel;
-            let pixel = &frame.data[offset..];
-            pixels.push(match frame.format {
-                PixelFormat::Gray8 => [pixel[0]; 3],
-                PixelFormat::Rgb24 | PixelFormat::Rgba8 => [pixel[0], pixel[1], pixel[2]],
-                PixelFormat::Bgra8 => [pixel[2], pixel[1], pixel[0]],
-            });
+        let row = &frame.data[sample_at(y, frame.height, height) * frame.stride..];
+        match frame.format {
+            PixelFormat::Gray8 => pixels.extend(offsets.iter().map(|&i| [row[i]; 3])),
+            PixelFormat::Rgb24 | PixelFormat::Rgba8 => {
+                pixels.extend(offsets.iter().map(|&i| [row[i], row[i + 1], row[i + 2]]));
+            }
+            PixelFormat::Bgra8 => {
+                pixels.extend(offsets.iter().map(|&i| [row[i + 2], row[i + 1], row[i]]));
+            }
         }
     }
     Measurements {
@@ -736,6 +743,49 @@ mod tests {
         let measured = measure(&frame);
         assert_eq!((measured.width, measured.height), (256, 1));
         assert_eq!(measured.pixels, vec![[25; 3]; 256]);
+    }
+
+    #[test]
+    fn padded_rectangular_sources_match_the_scalar_sampler_in_every_format() {
+        for (w, h) in [(1, 513), (519, 1), (301, 167), (127, 83)] {
+            for format in [
+                PixelFormat::Gray8,
+                PixelFormat::Rgb24,
+                PixelFormat::Rgba8,
+                PixelFormat::Bgra8,
+            ] {
+                let bpp = format.bytes_per_pixel();
+                let stride = w * bpp + 5;
+                // A decoder need not provide padding after the last visible row.
+                let data: Vec<_> = (0..(h - 1) * stride + w * bpp)
+                    .map(|i| (i % 251) as u8)
+                    .collect();
+                let frame = Frame {
+                    data: &data,
+                    width: w as u32,
+                    height: h as u32,
+                    stride,
+                    format,
+                    timestamp: Timestamp::new(0, 1, 1),
+                    display: Default::default(),
+                };
+                let result = measure(&frame);
+                let sw = result.width as usize;
+                let sh = result.height as usize;
+                for (index, &actual) in result.pixels.iter().enumerate() {
+                    let x = (2 * (index % sw) + 1) * w / (2 * sw);
+                    let y = (2 * (index / sw) + 1) * h / (2 * sh);
+                    let offset = y * stride + x * bpp;
+                    let bytes = &data[offset..offset + bpp];
+                    let expected = match format {
+                        PixelFormat::Gray8 => [bytes[0]; 3],
+                        PixelFormat::Rgb24 | PixelFormat::Rgba8 => [bytes[0], bytes[1], bytes[2]],
+                        PixelFormat::Bgra8 => [bytes[2], bytes[1], bytes[0]],
+                    };
+                    assert_eq!(actual, expected);
+                }
+            }
+        }
     }
 
     #[test]

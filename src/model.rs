@@ -333,6 +333,45 @@ pub struct AnalysisResult {
     pub resume_at: Option<Timestamp>,
 }
 
+/// A serializable snapshot that borrows the analyzer's observation, track and
+/// event history. Coverage and appearance ends reflect the requested scan end.
+/// Drop the view before submitting another frame. Its serialized form is
+/// identical to [`AnalysisResult`].
+#[derive(Debug, Serialize)]
+#[serde(rename = "AnalysisResult")]
+pub struct AnalysisSnapshot<'a> {
+    pub schema_version: u32,
+    pub start: Timestamp,
+    pub end: Timestamp,
+    pub sampling: Sampling,
+    pub observations: &'a [FrameObservation],
+    pub tracks: &'a [ParticipantTrack],
+    pub appearances: Vec<Appearance>,
+    pub events: &'a [ChangeEvent],
+    pub coverage: Vec<CoverageInterval>,
+    pub diagnostics: &'a [BackendDiagnostic],
+    pub resume_at: Option<Timestamp>,
+}
+
+impl AnalysisSnapshot<'_> {
+    /// Copy the borrowed history into an independently owned result.
+    pub fn into_owned(self) -> AnalysisResult {
+        AnalysisResult {
+            schema_version: self.schema_version,
+            start: self.start,
+            end: self.end,
+            sampling: self.sampling,
+            observations: self.observations.to_vec(),
+            tracks: self.tracks.to_vec(),
+            appearances: self.appearances,
+            events: self.events.to_vec(),
+            coverage: self.coverage,
+            diagnostics: self.diagnostics.to_vec(),
+            resume_at: self.resume_at,
+        }
+    }
+}
+
 impl AnalysisResult {
     /// Find the sampled frame responsible for an instant. Sparse intervals can
     /// carry a prior sample within their covered interval. Use coverage_at to

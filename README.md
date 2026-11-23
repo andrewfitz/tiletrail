@@ -5,11 +5,10 @@ TileTrail tracks participant tiles across layout changes in video recordings. Su
 ## Analyze frames from Rust
 
 ```rust
-use tiletrail::{Analyzer, AnalyzerConfig, BackendMode, Frame, PixelFormat, Timestamp};
+use tiletrail::{Analyzer, AnalyzerConfig, Frame, PixelFormat, Timestamp};
 
 let start = Timestamp::new(9000, 1, 90000);
-let config = AnalyzerConfig { mode: BackendMode::CpuOnly, ..Default::default() };
-let mut analyzer = Analyzer::new(config, start)?;
+let mut analyzer = Analyzer::new(AnalyzerConfig::default(), start)?;
 let pixels = vec![96_u8; 320 * 180];
 analyzer.push(Frame {
     data: &pixels, width: 320, height: 180, stride: 320,
@@ -23,13 +22,15 @@ assert_eq!(result.schema_version, 1);
 
 The frame buffer is borrowed for the call. Supply actual presentation timestamps, including the media origin, and the exclusive end of the last frame. Rectangle coordinates run from zero to one in display orientation, with the origin in the upper left. `visible_at` returns a sampled observation. Check `coverage_at` to distinguish observed, inferred, unknown and incomplete time.
 
-The default crate build uses the Rust CPU backend. Enable the `gpu` Cargo feature to include the optional wgpu backend. Use automatic mode for backend selection and fallback, or request a specific mode for repeatable measurements. Both paths feed the same identity tracker.
+Enable the `gpu` Cargo feature for GPU-first analysis. The default analyzer configuration prefers Metal on Apple Silicon and recovers on the CPU if the GPU becomes unavailable. On other platforms automatic mode uses the CPU. A build without the feature omits wgpu. Both paths feed the same identity tracker. Call `analyzer.diagnostics()` to inspect the selected backend and transitions.
 
 ## Interchange
 
 Track IDs belong to one analysis. An editor can link a durable person ID to accepted appearance intervals and preserve corrections across project saves. A guest may occupy more than one region. Ambiguous associations and the confidence attached to them are available to the consumer. Review the actual regions and coverage before using an inferred association for privacy editing.
 
 The serialized result carries a schema version distinct from the crate version and the C ABI version. [JSON result schema](schema/analysis-v1.json)
+
+The [two-person example](schema/examples/two-up.json) contains the first two frames of the generated interview at 10 fps. The observations identify two visible regions at source times 0.0 and 0.1 seconds. Each region has an appearance ID and a participant ID. The scan ends at 0.2 seconds, so an editor can query either frame using the same half-open time range.
 
 ## Build and test
 

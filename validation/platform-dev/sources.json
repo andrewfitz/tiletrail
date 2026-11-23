@@ -1,0 +1,80 @@
+{
+  "purpose": "Development only",
+  "extraction_command": "ffmpeg -ss START_SECONDS -i INPUT_URL -t 4 -map 0:v:0 -vf fps=12 -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p OUTPUT.mp4",
+  "sources": {
+    "meet-2024-03": {
+      "title": "Abstract_Wikipedia_Volunteer_Corner_2024-03.webm",
+      "date": "2024-03-04",
+      "credit": "Sannita (WMF)",
+      "license": "CC-BY-SA-4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "page": "https://commons.wikimedia.org/wiki/File:Abstract_Wikipedia_Volunteer_Corner_2024-03.webm",
+      "platform_evidence": "https://commons.wikimedia.org/wiki/Category:Abstract_Wikipedia_Volunteer%27s_Corner",
+      "input_url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/7/71/Abstract_Wikipedia_Volunteer_Corner_2024-03.webm/Abstract_Wikipedia_Volunteer_Corner_2024-03.webm.480p.vp9.webm"
+    },
+    "meet-2024-09": {
+      "title": "Abstract_Wikipedia_Volunteer_Corner_2024-09.webm",
+      "date": "2024-09-02",
+      "credit": "Sannita (WMF)",
+      "license": "CC-BY-SA-4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "page": "https://commons.wikimedia.org/wiki/File:Abstract_Wikipedia_Volunteer_Corner_2024-09.webm",
+      "platform_evidence": "https://commons.wikimedia.org/wiki/Category:Abstract_Wikipedia_Volunteer%27s_Corner",
+      "input_url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/0/08/Abstract_Wikipedia_Volunteer_Corner_2024-09.webm/Abstract_Wikipedia_Volunteer_Corner_2024-09.webm.480p.vp9.webm"
+    },
+    "teams-2020-11": {
+      "title": "AFCEA Maritime IT Summit",
+      "date": "2020-11-05",
+      "credit": "Department of the Navy Chief Information Officer",
+      "license": "Public domain (DVIDS designation)",
+      "license_url": "https://www.dvidshub.net/about/copyright",
+      "page": "https://www.dvidshub.net/video/772313/afcea-maritime-summit",
+      "platform_evidence": "https://www.dvidshub.net/video/772313/afcea-maritime-summit",
+      "input_url": "https://d34w7g4gy10iej.cloudfront.net/video/2011/DOD_108056405/DOD_108056405-1024x576-1769k.mp4"
+    },
+    "teams-2021-05": {
+      "title": "DON IT Conference, East Coast May 25 Cyber Workforce Track",
+      "date": "2021-05-25",
+      "credit": "Department of the Navy Chief Information Officer",
+      "license": "Public domain (DVIDS designation)",
+      "license_url": "https://www.dvidshub.net/about/copyright",
+      "page": "https://www.dvidshub.net/video/801433/don-conference-east-coast-may-25-cyber-workforce-track",
+      "platform_evidence": "https://www.doncio.navy.mil/%28ah2jtj21pduikr45nkdiyl55%29/ContentView.aspx?id=14597",
+      "input_url": "https://d34w7g4gy10iej.cloudfront.net/video/2106/DOD_108403501/DOD_108403501.mp4"
+    }
+  },
+  "clips": {
+    "meet-speaker.mp4": {
+      "source": "meet-2024-03",
+      "source_start_sec": 20
+    },
+    "meet-presenter-sidebar.mp4": {
+      "source": "meet-2024-03",
+      "source_start_sec": 480
+    },
+    "meet-camera-off-sidebar.mp4": {
+      "source": "meet-2024-09",
+      "source_start_sec": 960
+    },
+    "teams-speaker.mp4": {
+      "source": "teams-2020-11",
+      "source_start_sec": 150
+    },
+    "teams-presenter-sidebar.mp4": {
+      "source": "teams-2020-11",
+      "source_start_sec": 240
+    },
+    "teams-slides-only.mp4": {
+      "source": "teams-2020-11",
+      "source_start_sec": 390
+    },
+    "teams-stage-filmstrip.mp4": {
+      "source": "teams-2021-05",
+      "source_start_sec": 20
+    },
+    "teams-presenter-overlay.mp4": {
+      "source": "teams-2021-05",
+      "source_start_sec": 1800
+    }
+  }
+}

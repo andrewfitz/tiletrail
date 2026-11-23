@@ -35,6 +35,8 @@ impl Overlay {
     }
 }
 
+const MIN_EDGE_SCORE: i32 = 18;
+
 struct Edge {
     band: Bounds,
     score: i32,
@@ -61,6 +63,13 @@ fn find_edge(
         };
         let mut strength = 0;
         for k in (0..length).step_by(2) {
+            // Even perfect support adds only four points per remaining probe.
+            // Check in batches to avoid spending a branch on every pixel.
+            if k % 16 == 0
+                && strength + (length - k).div_ceil(2) as i32 * 4 <= score.max(MIN_EDGE_SCORE - 1)
+            {
+                break;
+            }
             let i = position(k);
             let pixel = image.at_line(horizontal, outside, i);
             let high = *pixel.iter().max().unwrap();
@@ -77,7 +86,7 @@ fn find_edge(
         }
     }
     let (width, mut span) = best?;
-    if score < 18 || span < 16 {
+    if score < MIN_EDGE_SCORE || span < 16 {
         return None;
     }
     let (left, right) = if trailing {
@@ -87,7 +96,8 @@ fn find_edge(
     };
     let exterior = if trailing { left - 1 } else { right };
     let mut quiet_run = 0;
-    for k in span..length {
+    let supported_span = span;
+    for k in supported_span..length {
         let i = position(k);
         let backdrop = image.at_line(horizontal, exterior, i);
         // A pillarbox can hide the edge of the terminal thumbnail.

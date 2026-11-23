@@ -1,0 +1,1861 @@
+{
+  "frozen_revision": "d9798c1",
+  "machine": "Apple M4 Max, macOS 27.0.1, rustc 1.99.0",
+  "cpu": {
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "loops": 15,
+    "binary_sha256": {
+      "before": "0a99faca179427c9888a35e6bcc8ea8993766f0dc440cd2cfea1a53937273d3d",
+      "after": "cd003a8cac5388d59c6fbd99f819eeeefb2d9a0363b753fa0ed12e0b3e180a49"
+    },
+    "cases": {
+      "cpu/interview": {
+        "input_sha256": "77bb69a4524b26973430ebf35fb28b6b58a9d491bb6005b21be3077550085254",
+        "samples": {
+          "before": [
+            {
+              "backend": "cpu",
+              "committed_frames": 660,
+              "elapsed_seconds": 1.462831541,
+              "events": 133,
+              "finish_seconds": 3.5166e-05,
+              "frames_per_second": 451.1797712187832,
+              "initialization_seconds": 4.416e-06,
+              "read_and_push_seconds": 1.462791959,
+              "realtime_multiple": 45.11797712187832,
+              "tracks": 2,
+              "cpu_seconds": 0.22957699999999998,
+              "max_rss_bytes": 9338880
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 660,
+              "elapsed_seconds": 2.005054959,
+              "events": 133,
+              "finish_seconds": 0.000115792,
+              "frames_per_second": 329.1680345406432,
+              "initialization_seconds": 2.709e-06,
+              "read_and_push_seconds": 2.004936458,
+              "realtime_multiple": 32.91680345406432,
+              "tracks": 2,
+              "cpu_seconds": 0.23315300000000005,
+              "max_rss_bytes": 8863744
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 660,
+              "elapsed_seconds": 1.9822947499999999,
+              "events": 133,
+              "finish_seconds": 9.9917e-05,
+              "frames_per_second": 332.947458999223,
+              "initialization_seconds": 5.708e-06,
+              "read_and_push_seconds": 1.982189125,
+              "realtime_multiple": 33.2947458999223,
+              "tracks": 2,
+              "cpu_seconds": 0.2494289999999999,
+              "max_rss_bytes": 9404416
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 660,
+              "elapsed_seconds": 1.041391542,
+              "events": 133,
+              "finish_seconds": 3.9083e-05,
+              "frames_per_second": 633.7673904403575,
+              "initialization_seconds": 3.125e-06,
+              "read_and_push_seconds": 1.041349334,
+              "realtime_multiple": 63.37673904403575,
+              "tracks": 2,
+              "cpu_seconds": 0.20101100000000005,
+              "max_rss_bytes": 9355264
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 660,
+              "elapsed_seconds": 1.209668292,
+              "events": 133,
+              "finish_seconds": 0.000107375,
+              "frames_per_second": 545.60411673583,
+              "initialization_seconds": 4.5e-06,
+              "read_and_push_seconds": 1.209556417,
+              "realtime_multiple": 54.560411673583,
+              "tracks": 2,
+              "cpu_seconds": 0.2207159999999999,
+              "max_rss_bytes": 9388032
+            }
+          ],
+          "after": [
+            {
+              "backend": "cpu",
+              "committed_frames": 660,
+              "elapsed_seconds": 1.586268292,
+              "events": 133,
+              "finish_seconds": 8.975e-05,
+              "frames_per_second": 416.0708521556958,
+              "initialization_seconds": 4.834e-06,
+              "read_and_push_seconds": 1.586173708,
+              "realtime_multiple": 41.607085215569576,
+              "tracks": 2,
+              "cpu_seconds": 0.21857,
+              "max_rss_bytes": 9404416
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 660,
+              "elapsed_seconds": 1.403267708,
+              "events": 133,
+              "finish_seconds": 6.6083e-05,
+              "frames_per_second": 470.3307830981599,
+              "initialization_seconds": 2.375e-06,
+              "read_and_push_seconds": 1.4031992500000001,
+              "realtime_multiple": 47.03307830981599,
+              "tracks": 2,
+              "cpu_seconds": 0.24495499999999998,
+              "max_rss_bytes": 9502720
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 660,
+              "elapsed_seconds": 1.745019708,
+              "events": 133,
+              "finish_seconds": 4.2583e-05,
+              "frames_per_second": 378.2192241005911,
+              "initialization_seconds": 2.375e-06,
+              "read_and_push_seconds": 1.74497475,
+              "realtime_multiple": 37.82192241005911,
+              "tracks": 2,
+              "cpu_seconds": 0.21128900000000006,
+              "max_rss_bytes": 9420800
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 660,
+              "elapsed_seconds": 1.376448041,
+              "events": 133,
+              "finish_seconds": 3.9625e-05,
+              "frames_per_second": 479.49503384123744,
+              "initialization_seconds": 2.625e-06,
+              "read_and_push_seconds": 1.376405791,
+              "realtime_multiple": 47.949503384123744,
+              "tracks": 2,
+              "cpu_seconds": 0.201063,
+              "max_rss_bytes": 9502720
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 660,
+              "elapsed_seconds": 1.171075125,
+              "events": 133,
+              "finish_seconds": 5.9083e-05,
+              "frames_per_second": 563.5846803594261,
+              "initialization_seconds": 3e-06,
+              "read_and_push_seconds": 1.171013042,
+              "realtime_multiple": 56.35846803594261,
+              "tracks": 2,
+              "cpu_seconds": 0.2330620000000001,
+              "max_rss_bytes": 9420800
+            }
+          ]
+        },
+        "before": {
+          "elapsed_seconds": 1.462831541,
+          "cpu_seconds": 0.22957699999999998,
+          "max_rss_bytes": 9355264,
+          "frames_per_second": 451.1797712187832
+        },
+        "after": {
+          "elapsed_seconds": 1.403267708,
+          "cpu_seconds": 0.21857,
+          "max_rss_bytes": 9420800,
+          "frames_per_second": 470.3307830981599
+        }
+      },
+      "cpu/speech_control": {
+        "input_sha256": "e556ee89a8ec32dcf7e8fa14fb3f5f95ec958ab0bde690e259252c714776664c",
+        "samples": {
+          "before": [
+            {
+              "backend": "cpu",
+              "committed_frames": 360,
+              "elapsed_seconds": 1.017202625,
+              "events": 0,
+              "finish_seconds": 3.0125e-05,
+              "frames_per_second": 353.9117882241014,
+              "initialization_seconds": 2.916e-06,
+              "read_and_push_seconds": 1.017169584,
+              "realtime_multiple": 35.39117882241014,
+              "tracks": 2,
+              "cpu_seconds": 0.13434099999999993,
+              "max_rss_bytes": 9142272
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 360,
+              "elapsed_seconds": 1.013428459,
+              "events": 0,
+              "finish_seconds": 3.0209e-05,
+              "frames_per_second": 355.2298110467806,
+              "initialization_seconds": 4.792e-06,
+              "read_and_push_seconds": 1.013393458,
+              "realtime_multiple": 35.52298110467806,
+              "tracks": 2,
+              "cpu_seconds": 0.1585479999999997,
+              "max_rss_bytes": 9142272
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 360,
+              "elapsed_seconds": 0.493697,
+              "events": 0,
+              "finish_seconds": 4.9958e-05,
+              "frames_per_second": 729.1921968332804,
+              "initialization_seconds": 2.875e-06,
+              "read_and_push_seconds": 0.493644167,
+              "realtime_multiple": 72.91921968332804,
+              "tracks": 2,
+              "cpu_seconds": 0.12469300000000016,
+              "max_rss_bytes": 9076736
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 360,
+              "elapsed_seconds": 0.978298625,
+              "events": 0,
+              "finish_seconds": 2.3792e-05,
+              "frames_per_second": 367.98579779257074,
+              "initialization_seconds": 7.708e-06,
+              "read_and_push_seconds": 0.978267125,
+              "realtime_multiple": 36.798579779257075,
+              "tracks": 2,
+              "cpu_seconds": 0.14675399999999983,
+              "max_rss_bytes": 9142272
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 360,
+              "elapsed_seconds": 0.635538708,
+              "events": 0,
+              "finish_seconds": 2.5958e-05,
+              "frames_per_second": 566.4485820744061,
+              "initialization_seconds": 3.25e-06,
+              "read_and_push_seconds": 0.6355095,
+              "realtime_multiple": 56.644858207440606,
+              "tracks": 2,
+              "cpu_seconds": 0.14124500000000006,
+              "max_rss_bytes": 9125888
+            }
+          ],
+          "after": [
+            {
+              "backend": "cpu",
+              "committed_frames": 360,
+              "elapsed_seconds": 0.437068292,
+              "events": 0,
+              "finish_seconds": 4.1667e-05,
+              "frames_per_second": 823.6699083172109,
+              "initialization_seconds": 3e-06,
+              "read_and_push_seconds": 0.437023625,
+              "realtime_multiple": 82.3669908317211,
+              "tracks": 2,
+              "cpu_seconds": 0.10913700000000004,
+              "max_rss_bytes": 9175040
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 360,
+              "elapsed_seconds": 0.588704375,
+              "events": 0,
+              "finish_seconds": 2.9208e-05,
+              "frames_per_second": 611.5123571147234,
+              "initialization_seconds": 3.25e-06,
+              "read_and_push_seconds": 0.588671917,
+              "realtime_multiple": 61.15123571147234,
+              "tracks": 2,
+              "cpu_seconds": 0.1242890000000001,
+              "max_rss_bytes": 9027584
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 360,
+              "elapsed_seconds": 0.996052333,
+              "events": 0,
+              "finish_seconds": 4.7417e-05,
+              "frames_per_second": 361.42679262215034,
+              "initialization_seconds": 5.041e-06,
+              "read_and_push_seconds": 0.995999875,
+              "realtime_multiple": 36.14267926221503,
+              "tracks": 2,
+              "cpu_seconds": 0.16002500000000008,
+              "max_rss_bytes": 8830976
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 360,
+              "elapsed_seconds": 0.373312,
+              "events": 0,
+              "finish_seconds": 6.2625e-05,
+              "frames_per_second": 964.3408194753987,
+              "initialization_seconds": 2.791e-06,
+              "read_and_push_seconds": 0.373246584,
+              "realtime_multiple": 96.43408194753987,
+              "tracks": 2,
+              "cpu_seconds": 0.1271549999999999,
+              "max_rss_bytes": 9158656
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 360,
+              "elapsed_seconds": 0.464032458,
+              "events": 0,
+              "finish_seconds": 3.1375e-05,
+              "frames_per_second": 775.8077992035635,
+              "initialization_seconds": 4.958e-06,
+              "read_and_push_seconds": 0.463996125,
+              "realtime_multiple": 77.58077992035635,
+              "tracks": 2,
+              "cpu_seconds": 0.10929200000000017,
+              "max_rss_bytes": 9240576
+            }
+          ]
+        },
+        "before": {
+          "elapsed_seconds": 0.978298625,
+          "cpu_seconds": 0.14124500000000006,
+          "max_rss_bytes": 9142272,
+          "frames_per_second": 367.98579779257074
+        },
+        "after": {
+          "elapsed_seconds": 0.464032458,
+          "cpu_seconds": 0.1242890000000001,
+          "max_rss_bytes": 9158656,
+          "frames_per_second": 775.8077992035635
+        }
+      },
+      "cpu/gallery": {
+        "input_sha256": "84fa0deda2260e83f37182d06bbf2d0018d42943b9fb757df626a8cdeeb39360",
+        "samples": {
+          "before": [
+            {
+              "backend": "cpu",
+              "committed_frames": 780,
+              "elapsed_seconds": 4.831217125,
+              "events": 591,
+              "finish_seconds": 0.0099465,
+              "frames_per_second": 161.4499989999932,
+              "initialization_seconds": 3.25e-06,
+              "read_and_push_seconds": 4.821267375,
+              "realtime_multiple": 16.14499989999932,
+              "tracks": 39,
+              "cpu_seconds": 0.48931100000000005,
+              "max_rss_bytes": 10059776
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 780,
+              "elapsed_seconds": 4.649547166,
+              "events": 591,
+              "finish_seconds": 0.000227166,
+              "frames_per_second": 167.75827239774688,
+              "initialization_seconds": 4.625e-06,
+              "read_and_push_seconds": 4.6493153750000005,
+              "realtime_multiple": 16.77582723977469,
+              "tracks": 39,
+              "cpu_seconds": 0.46074000000000037,
+              "max_rss_bytes": 10321920
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 780,
+              "elapsed_seconds": 4.278617333,
+              "events": 591,
+              "finish_seconds": 0.0001855,
+              "frames_per_second": 182.30188383149806,
+              "initialization_seconds": 2.708e-06,
+              "read_and_push_seconds": 4.278429125,
+              "realtime_multiple": 18.230188383149805,
+              "tracks": 39,
+              "cpu_seconds": 0.4692419999999995,
+              "max_rss_bytes": 10108928
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 780,
+              "elapsed_seconds": 3.098685375,
+              "events": 591,
+              "finish_seconds": 0.002864959,
+              "frames_per_second": 251.7196506276472,
+              "initialization_seconds": 2.666e-06,
+              "read_and_push_seconds": 3.09581775,
+              "realtime_multiple": 25.17196506276472,
+              "tracks": 39,
+              "cpu_seconds": 0.46511599999999964,
+              "max_rss_bytes": 11059200
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 780,
+              "elapsed_seconds": 3.164351084,
+              "events": 591,
+              "finish_seconds": 0.000189625,
+              "frames_per_second": 246.4960364050426,
+              "initialization_seconds": 4.959e-06,
+              "read_and_push_seconds": 3.1641565,
+              "realtime_multiple": 24.64960364050426,
+              "tracks": 39,
+              "cpu_seconds": 0.4592580000000006,
+              "max_rss_bytes": 10059776
+            }
+          ],
+          "after": [
+            {
+              "backend": "cpu",
+              "committed_frames": 780,
+              "elapsed_seconds": 4.241910041,
+              "events": 591,
+              "finish_seconds": 0.000171458,
+              "frames_per_second": 183.87942989383166,
+              "initialization_seconds": 5.416e-06,
+              "read_and_push_seconds": 4.241733167,
+              "realtime_multiple": 18.387942989383166,
+              "tracks": 39,
+              "cpu_seconds": 0.42904699999999996,
+              "max_rss_bytes": 10092544
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 780,
+              "elapsed_seconds": 4.68081,
+              "events": 591,
+              "finish_seconds": 0.000547458,
+              "frames_per_second": 166.6378255045601,
+              "initialization_seconds": 5.417e-06,
+              "read_and_push_seconds": 4.680257125,
+              "realtime_multiple": 16.663782550456013,
+              "tracks": 39,
+              "cpu_seconds": 0.4575239999999998,
+              "max_rss_bytes": 10141696
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 780,
+              "elapsed_seconds": 4.385672375,
+              "events": 591,
+              "finish_seconds": 0.000471292,
+              "frames_per_second": 177.85186245244776,
+              "initialization_seconds": 2.958e-06,
+              "read_and_push_seconds": 4.385198125,
+              "realtime_multiple": 17.785186245244777,
+              "tracks": 39,
+              "cpu_seconds": 0.5057300000000002,
+              "max_rss_bytes": 10059776
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 780,
+              "elapsed_seconds": 3.535124542,
+              "events": 591,
+              "finish_seconds": 0.000172375,
+              "frames_per_second": 220.64286299761147,
+              "initialization_seconds": 2.917e-06,
+              "read_and_push_seconds": 3.53494925,
+              "realtime_multiple": 22.064286299761147,
+              "tracks": 39,
+              "cpu_seconds": 0.4585440000000003,
+              "max_rss_bytes": 11272192
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 780,
+              "elapsed_seconds": 4.140076,
+              "events": 591,
+              "finish_seconds": 0.000340209,
+              "frames_per_second": 188.40233850779552,
+              "initialization_seconds": 3e-06,
+              "read_and_push_seconds": 4.139732791,
+              "realtime_multiple": 18.84023385077955,
+              "tracks": 39,
+              "cpu_seconds": 0.4751149999999993,
+              "max_rss_bytes": 10059776
+            }
+          ]
+        },
+        "before": {
+          "elapsed_seconds": 4.278617333,
+          "cpu_seconds": 0.46511599999999964,
+          "max_rss_bytes": 10108928,
+          "frames_per_second": 182.30188383149806
+        },
+        "after": {
+          "elapsed_seconds": 4.241910041,
+          "cpu_seconds": 0.4585440000000003,
+          "max_rss_bytes": 10092544,
+          "frames_per_second": 183.87942989383166
+        }
+      },
+      "cpu/stage_and_share": {
+        "input_sha256": "dbd748dcb742f5f2e8816b74ae61fc578b88398f8916d3d5f990ccea3b3685ad",
+        "samples": {
+          "before": [
+            {
+              "backend": "cpu",
+              "committed_frames": 675,
+              "elapsed_seconds": 2.115939166,
+              "events": 161,
+              "finish_seconds": 0.000119041,
+              "frames_per_second": 319.00728094939944,
+              "initialization_seconds": 7.5e-06,
+              "read_and_push_seconds": 2.1158126250000002,
+              "realtime_multiple": 31.900728094939943,
+              "tracks": 3,
+              "cpu_seconds": 0.2946460000000002,
+              "max_rss_bytes": 9011200
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 675,
+              "elapsed_seconds": 2.029251459,
+              "events": 161,
+              "finish_seconds": 6.325e-05,
+              "frames_per_second": 332.6349708934717,
+              "initialization_seconds": 2.959e-06,
+              "read_and_push_seconds": 2.02918525,
+              "realtime_multiple": 33.26349708934717,
+              "tracks": 3,
+              "cpu_seconds": 0.2649910000000002,
+              "max_rss_bytes": 9682944
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 675,
+              "elapsed_seconds": 1.295936417,
+              "events": 161,
+              "finish_seconds": 6.6167e-05,
+              "frames_per_second": 520.8588871686904,
+              "initialization_seconds": 5.792e-06,
+              "read_and_push_seconds": 1.295864458,
+              "realtime_multiple": 52.08588871686904,
+              "tracks": 3,
+              "cpu_seconds": 0.2815080000000001,
+              "max_rss_bytes": 9666560
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 675,
+              "elapsed_seconds": 1.7185557089999999,
+              "events": 161,
+              "finish_seconds": 6.2e-05,
+              "frames_per_second": 392.771672436951,
+              "initialization_seconds": 2.584e-06,
+              "read_and_push_seconds": 1.718491125,
+              "realtime_multiple": 39.277167243695104,
+              "tracks": 3,
+              "cpu_seconds": 0.2691140000000001,
+              "max_rss_bytes": 9109504
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 675,
+              "elapsed_seconds": 2.473031875,
+              "events": 161,
+              "finish_seconds": 6.5208e-05,
+              "frames_per_second": 272.94431860082676,
+              "initialization_seconds": 2.5e-06,
+              "read_and_push_seconds": 2.4729641669999998,
+              "realtime_multiple": 27.294431860082675,
+              "tracks": 3,
+              "cpu_seconds": 0.2609349999999999,
+              "max_rss_bytes": 9666560
+            }
+          ],
+          "after": [
+            {
+              "backend": "cpu",
+              "committed_frames": 675,
+              "elapsed_seconds": 1.111861209,
+              "events": 161,
+              "finish_seconds": 0.000165584,
+              "frames_per_second": 607.0901606569134,
+              "initialization_seconds": 2.917e-06,
+              "read_and_push_seconds": 1.111692708,
+              "realtime_multiple": 60.709016065691344,
+              "tracks": 3,
+              "cpu_seconds": 0.2911509999999997,
+              "max_rss_bytes": 9093120
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 675,
+              "elapsed_seconds": 2.850011334,
+              "events": 161,
+              "finish_seconds": 0.000136542,
+              "frames_per_second": 236.8411633832471,
+              "initialization_seconds": 4.584e-06,
+              "read_and_push_seconds": 2.849870208,
+              "realtime_multiple": 23.68411633832471,
+              "tracks": 3,
+              "cpu_seconds": 0.3086359999999999,
+              "max_rss_bytes": 9699328
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 675,
+              "elapsed_seconds": 1.415583709,
+              "events": 161,
+              "finish_seconds": 6.4667e-05,
+              "frames_per_second": 476.8351003960303,
+              "initialization_seconds": 2.417e-06,
+              "read_and_push_seconds": 1.415516625,
+              "realtime_multiple": 47.683510039603036,
+              "tracks": 3,
+              "cpu_seconds": 0.23708899999999966,
+              "max_rss_bytes": 9666560
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 675,
+              "elapsed_seconds": 1.524531667,
+              "events": 161,
+              "finish_seconds": 0.000151083,
+              "frames_per_second": 442.7589236819703,
+              "initialization_seconds": 2.917e-06,
+              "read_and_push_seconds": 1.524377667,
+              "realtime_multiple": 44.275892368197034,
+              "tracks": 3,
+              "cpu_seconds": 0.25254800000000044,
+              "max_rss_bytes": 9715712
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 675,
+              "elapsed_seconds": 2.042665125,
+              "events": 161,
+              "finish_seconds": 0.000134417,
+              "frames_per_second": 330.45064104670604,
+              "initialization_seconds": 2.375e-06,
+              "read_and_push_seconds": 2.042528333,
+              "realtime_multiple": 33.0450641046706,
+              "tracks": 3,
+              "cpu_seconds": 0.26214000000000004,
+              "max_rss_bytes": 9682944
+            }
+          ]
+        },
+        "before": {
+          "elapsed_seconds": 2.029251459,
+          "cpu_seconds": 0.2691140000000001,
+          "max_rss_bytes": 9666560,
+          "frames_per_second": 332.6349708934717
+        },
+        "after": {
+          "elapsed_seconds": 1.524531667,
+          "cpu_seconds": 0.26214000000000004,
+          "max_rss_bytes": 9682944,
+          "frames_per_second": 442.7589236819703
+        }
+      },
+      "cpu/jitsi": {
+        "input_sha256": "fa35e288617a828a573056243317fced34cf88ab3cc1c1ac813acfd74d4c6735",
+        "samples": {
+          "before": [
+            {
+              "backend": "cpu",
+              "committed_frames": 90,
+              "elapsed_seconds": 0.39727225,
+              "events": 463,
+              "finish_seconds": 3.8708e-05,
+              "frames_per_second": 226.54489459054844,
+              "initialization_seconds": 2.833e-06,
+              "read_and_push_seconds": 0.397230709,
+              "realtime_multiple": 22.654489459054844,
+              "tracks": 98,
+              "cpu_seconds": 0.06751300000000038,
+              "max_rss_bytes": 9863168
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 90,
+              "elapsed_seconds": 0.825923708,
+              "events": 463,
+              "finish_seconds": 4e-05,
+              "frames_per_second": 108.96890248850926,
+              "initialization_seconds": 5.375e-06,
+              "read_and_push_seconds": 0.825878333,
+              "realtime_multiple": 10.896890248850926,
+              "tracks": 98,
+              "cpu_seconds": 0.08973700000000084,
+              "max_rss_bytes": 9945088
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 90,
+              "elapsed_seconds": 0.416959041,
+              "events": 463,
+              "finish_seconds": 0.000181958,
+              "frames_per_second": 215.848539425243,
+              "initialization_seconds": 7.541e-06,
+              "read_and_push_seconds": 0.416769542,
+              "realtime_multiple": 21.584853942524298,
+              "tracks": 98,
+              "cpu_seconds": 0.09607399999999933,
+              "max_rss_bytes": 9830400
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 90,
+              "elapsed_seconds": 0.648557667,
+              "events": 463,
+              "finish_seconds": 4.6583e-05,
+              "frames_per_second": 138.76946427340593,
+              "initialization_seconds": 2.75e-06,
+              "read_and_push_seconds": 0.648508334,
+              "realtime_multiple": 13.876946427340593,
+              "tracks": 98,
+              "cpu_seconds": 0.10086500000000065,
+              "max_rss_bytes": 9928704
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 90,
+              "elapsed_seconds": 0.468591917,
+              "events": 463,
+              "finish_seconds": 4.475e-05,
+              "frames_per_second": 192.06477264096725,
+              "initialization_seconds": 2.75e-06,
+              "read_and_push_seconds": 0.468544417,
+              "realtime_multiple": 19.206477264096726,
+              "tracks": 98,
+              "cpu_seconds": 0.07171299999999903,
+              "max_rss_bytes": 9732096
+            }
+          ],
+          "after": [
+            {
+              "backend": "cpu",
+              "committed_frames": 90,
+              "elapsed_seconds": 0.339035583,
+              "events": 463,
+              "finish_seconds": 4.7958e-05,
+              "frames_per_second": 265.4588618799933,
+              "initialization_seconds": 2.583e-06,
+              "read_and_push_seconds": 0.338985042,
+              "realtime_multiple": 26.545886187999333,
+              "tracks": 98,
+              "cpu_seconds": 0.06412299999999949,
+              "max_rss_bytes": 9830400
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 90,
+              "elapsed_seconds": 0.304665333,
+              "events": 463,
+              "finish_seconds": 8.85e-05,
+              "frames_per_second": 295.4061071332983,
+              "initialization_seconds": 2.666e-06,
+              "read_and_push_seconds": 0.304574167,
+              "realtime_multiple": 29.54061071332983,
+              "tracks": 98,
+              "cpu_seconds": 0.07526899999999959,
+              "max_rss_bytes": 9912320
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 90,
+              "elapsed_seconds": 0.299752083,
+              "events": 463,
+              "finish_seconds": 4.975e-05,
+              "frames_per_second": 300.24812204557725,
+              "initialization_seconds": 5.667e-06,
+              "read_and_push_seconds": 0.299696666,
+              "realtime_multiple": 30.024812204557726,
+              "tracks": 98,
+              "cpu_seconds": 0.08091200000000054,
+              "max_rss_bytes": 9830400
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 90,
+              "elapsed_seconds": 0.339798708,
+              "events": 463,
+              "finish_seconds": 4.0541e-05,
+              "frames_per_second": 264.8626904137611,
+              "initialization_seconds": 4.125e-06,
+              "read_and_push_seconds": 0.339754042,
+              "realtime_multiple": 26.486269041376108,
+              "tracks": 98,
+              "cpu_seconds": 0.07131699999999963,
+              "max_rss_bytes": 9863168
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 90,
+              "elapsed_seconds": 0.376292709,
+              "events": 463,
+              "finish_seconds": 4.725e-05,
+              "frames_per_second": 239.17550844706906,
+              "initialization_seconds": 2.709e-06,
+              "read_and_push_seconds": 0.37624275,
+              "realtime_multiple": 23.917550844706906,
+              "tracks": 98,
+              "cpu_seconds": 0.06570300000000007,
+              "max_rss_bytes": 9666560
+            }
+          ]
+        },
+        "before": {
+          "elapsed_seconds": 0.468591917,
+          "cpu_seconds": 0.08973700000000084,
+          "max_rss_bytes": 9863168,
+          "frames_per_second": 192.06477264096725
+        },
+        "after": {
+          "elapsed_seconds": 0.339035583,
+          "cpu_seconds": 0.07131699999999963,
+          "max_rss_bytes": 9830400,
+          "frames_per_second": 265.4588618799933
+        }
+      }
+    }
+  },
+  "gpu": {
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "loops": 5,
+    "binary_sha256": {
+      "before": "0a99faca179427c9888a35e6bcc8ea8993766f0dc440cd2cfea1a53937273d3d",
+      "after": "0283682a9450859ef16abb5392aada15bb74f62d218cecabf0638f118816bb83"
+    },
+    "cases": {
+      "gpu/gallery": {
+        "input_sha256": "84fa0deda2260e83f37182d06bbf2d0018d42943b9fb757df626a8cdeeb39360",
+        "samples": {
+          "before": [
+            {
+              "backend": "gpu",
+              "committed_frames": 260,
+              "elapsed_seconds": 1.291696125,
+              "events": 191,
+              "finish_seconds": 5.9584e-05,
+              "frames_per_second": 201.28573196733868,
+              "initialization_seconds": 0.036207083,
+              "read_and_push_seconds": 1.255429458,
+              "realtime_multiple": 20.128573196733868,
+              "tracks": 19,
+              "cpu_seconds": 0.2841,
+              "max_rss_bytes": 33980416
+            },
+            {
+              "backend": "gpu",
+              "committed_frames": 260,
+              "elapsed_seconds": 1.365566417,
+              "events": 191,
+              "finish_seconds": 5.2042e-05,
+              "frames_per_second": 190.39718373507716,
+              "initialization_seconds": 0.038664292,
+              "read_and_push_seconds": 1.326850083,
+              "realtime_multiple": 19.039718373507718,
+              "tracks": 19,
+              "cpu_seconds": 0.30627199999999993,
+              "max_rss_bytes": 33996800
+            },
+            {
+              "backend": "gpu",
+              "committed_frames": 260,
+              "elapsed_seconds": 1.332882916,
+              "events": 191,
+              "finish_seconds": 5.6291e-05,
+              "frames_per_second": 195.06589579545636,
+              "initialization_seconds": 0.043809708,
+              "read_and_push_seconds": 1.289016917,
+              "realtime_multiple": 19.506589579545636,
+              "tracks": 19,
+              "cpu_seconds": 0.317718,
+              "max_rss_bytes": 34947072
+            },
+            {
+              "backend": "gpu",
+              "committed_frames": 260,
+              "elapsed_seconds": 1.341315958,
+              "events": 191,
+              "finish_seconds": 6.0458e-05,
+              "frames_per_second": 193.83948908479326,
+              "initialization_seconds": 0.080627916,
+              "read_and_push_seconds": 1.260627584,
+              "realtime_multiple": 19.383948908479326,
+              "tracks": 19,
+              "cpu_seconds": 0.30781099999999983,
+              "max_rss_bytes": 36192256
+            },
+            {
+              "backend": "gpu",
+              "committed_frames": 260,
+              "elapsed_seconds": 1.471294709,
+              "events": 191,
+              "finish_seconds": 5.8875e-05,
+              "frames_per_second": 176.7151056885912,
+              "initialization_seconds": 0.063230167,
+              "read_and_push_seconds": 1.408005667,
+              "realtime_multiple": 17.67151056885912,
+              "tracks": 19,
+              "cpu_seconds": 0.31097600000000014,
+              "max_rss_bytes": 33341440
+            }
+          ],
+          "after": [
+            {
+              "backend": "gpu",
+              "committed_frames": 260,
+              "elapsed_seconds": 1.337784,
+              "events": 191,
+              "finish_seconds": 6.5e-05,
+              "frames_per_second": 194.3512555091106,
+              "initialization_seconds": 0.030768167,
+              "read_and_push_seconds": 1.306950833,
+              "realtime_multiple": 19.43512555091106,
+              "tracks": 19,
+              "cpu_seconds": 0.290805,
+              "max_rss_bytes": 34013184
+            },
+            {
+              "backend": "gpu",
+              "committed_frames": 260,
+              "elapsed_seconds": 1.3365645,
+              "events": 191,
+              "finish_seconds": 0.000120041,
+              "frames_per_second": 194.52858429204127,
+              "initialization_seconds": 0.029199834,
+              "read_and_push_seconds": 1.307244625,
+              "realtime_multiple": 19.452858429204127,
+              "tracks": 19,
+              "cpu_seconds": 0.290993,
+              "max_rss_bytes": 36306944
+            },
+            {
+              "backend": "gpu",
+              "committed_frames": 260,
+              "elapsed_seconds": 1.5009685830000001,
+              "events": 191,
+              "finish_seconds": 5.7458e-05,
+              "frames_per_second": 173.22148041255835,
+              "initialization_seconds": 0.035160458,
+              "read_and_push_seconds": 1.465750667,
+              "realtime_multiple": 17.322148041255836,
+              "tracks": 19,
+              "cpu_seconds": 0.29844000000000015,
+              "max_rss_bytes": 34013184
+            },
+            {
+              "backend": "gpu",
+              "committed_frames": 260,
+              "elapsed_seconds": 1.091487083,
+              "events": 191,
+              "finish_seconds": 6.2417e-05,
+              "frames_per_second": 238.20712498528027,
+              "initialization_seconds": 0.028130666,
+              "read_and_push_seconds": 1.063294,
+              "realtime_multiple": 23.820712498528028,
+              "tracks": 19,
+              "cpu_seconds": 0.291381,
+              "max_rss_bytes": 34701312
+            },
+            {
+              "backend": "gpu",
+              "committed_frames": 260,
+              "elapsed_seconds": 0.862023959,
+              "events": 191,
+              "finish_seconds": 7.8709e-05,
+              "frames_per_second": 301.61574662218874,
+              "initialization_seconds": 0.0268325,
+              "read_and_push_seconds": 0.83511275,
+              "realtime_multiple": 30.161574662218875,
+              "tracks": 19,
+              "cpu_seconds": 0.2691359999999998,
+              "max_rss_bytes": 34340864
+            }
+          ]
+        },
+        "before": {
+          "elapsed_seconds": 1.341315958,
+          "cpu_seconds": 0.30781099999999983,
+          "max_rss_bytes": 33996800,
+          "frames_per_second": 193.83948908479326
+        },
+        "after": {
+          "elapsed_seconds": 1.3365645,
+          "cpu_seconds": 0.290993,
+          "max_rss_bytes": 34340864,
+          "frames_per_second": 194.52858429204127
+        }
+      },
+      "gpu/jitsi": {
+        "input_sha256": "fa35e288617a828a573056243317fced34cf88ab3cc1c1ac813acfd74d4c6735",
+        "samples": {
+          "before": [
+            {
+              "backend": "gpu",
+              "committed_frames": 30,
+              "elapsed_seconds": 0.260898875,
+              "events": 143,
+              "finish_seconds": 2.0917e-05,
+              "frames_per_second": 114.98708072236802,
+              "initialization_seconds": 0.024205792,
+              "read_and_push_seconds": 0.236672166,
+              "realtime_multiple": 11.498708072236802,
+              "tracks": 38,
+              "cpu_seconds": 0.07981100000000008,
+              "max_rss_bytes": 33554432
+            },
+            {
+              "backend": "gpu",
+              "committed_frames": 30,
+              "elapsed_seconds": 0.27137475,
+              "events": 143,
+              "finish_seconds": 2.2583e-05,
+              "frames_per_second": 110.54823634107447,
+              "initialization_seconds": 0.057119292,
+              "read_and_push_seconds": 0.214232875,
+              "realtime_multiple": 11.054823634107446,
+              "tracks": 38,
+              "cpu_seconds": 0.09617799999999987,
+              "max_rss_bytes": 34668544
+            },
+            {
+              "backend": "gpu",
+              "committed_frames": 30,
+              "elapsed_seconds": 0.248555792,
+              "events": 143,
+              "finish_seconds": 1.5042e-05,
+              "frames_per_second": 120.69724772295791,
+              "initialization_seconds": 0.026309167,
+              "read_and_push_seconds": 0.222231583,
+              "realtime_multiple": 12.06972477229579,
+              "tracks": 38,
+              "cpu_seconds": 0.0791360000000001,
+              "max_rss_bytes": 33521664
+            },
+            {
+              "backend": "gpu",
+              "committed_frames": 30,
+              "elapsed_seconds": 0.2916705,
+              "events": 143,
+              "finish_seconds": 1.8375e-05,
+              "frames_per_second": 102.85579103817493,
+              "initialization_seconds": 0.026740041,
+              "read_and_push_seconds": 0.264912084,
+              "realtime_multiple": 10.285579103817494,
+              "tracks": 38,
+              "cpu_seconds": 0.0869479999999998,
+              "max_rss_bytes": 33062912
+            },
+            {
+              "backend": "gpu",
+              "committed_frames": 30,
+              "elapsed_seconds": 0.240977875,
+              "events": 143,
+              "finish_seconds": 2.1333e-05,
+              "frames_per_second": 124.49275685579018,
+              "initialization_seconds": 0.0260825,
+              "read_and_push_seconds": 0.214874042,
+              "realtime_multiple": 12.449275685579018,
+              "tracks": 38,
+              "cpu_seconds": 0.07923199999999997,
+              "max_rss_bytes": 33505280
+            }
+          ],
+          "after": [
+            {
+              "backend": "gpu",
+              "committed_frames": 30,
+              "elapsed_seconds": 0.151307667,
+              "events": 143,
+              "finish_seconds": 1.7709e-05,
+              "frames_per_second": 198.2715125731203,
+              "initialization_seconds": 0.041237375,
+              "read_and_push_seconds": 0.110052583,
+              "realtime_multiple": 19.827151257312032,
+              "tracks": 38,
+              "cpu_seconds": 0.08426500000000003,
+              "max_rss_bytes": 35209216
+            },
+            {
+              "backend": "gpu",
+              "committed_frames": 30,
+              "elapsed_seconds": 0.185282042,
+              "events": 143,
+              "finish_seconds": 1.5709e-05,
+              "frames_per_second": 161.91531395147297,
+              "initialization_seconds": 0.025421917,
+              "read_and_push_seconds": 0.159844416,
+              "realtime_multiple": 16.191531395147297,
+              "tracks": 38,
+              "cpu_seconds": 0.07808199999999998,
+              "max_rss_bytes": 33734656
+            },
+            {
+              "backend": "gpu",
+              "committed_frames": 30,
+              "elapsed_seconds": 0.232116333,
+              "events": 143,
+              "finish_seconds": 1.7792e-05,
+              "frames_per_second": 129.24553654740012,
+              "initialization_seconds": 0.031537291,
+              "read_and_push_seconds": 0.20056125,
+              "realtime_multiple": 12.924553654740013,
+              "tracks": 38,
+              "cpu_seconds": 0.08455400000000002,
+              "max_rss_bytes": 34635776
+            },
+            {
+              "backend": "gpu",
+              "committed_frames": 30,
+              "elapsed_seconds": 0.362351917,
+              "events": 143,
+              "finish_seconds": 3.6334e-05,
+              "frames_per_second": 82.79244180181885,
+              "initialization_seconds": 0.107099875,
+              "read_and_push_seconds": 0.255215708,
+              "realtime_multiple": 8.279244180181886,
+              "tracks": 38,
+              "cpu_seconds": 0.08889700000000023,
+              "max_rss_bytes": 36044800
+            },
+            {
+              "backend": "gpu",
+              "committed_frames": 30,
+              "elapsed_seconds": 0.249298083,
+              "events": 143,
+              "finish_seconds": 1.6083e-05,
+              "frames_per_second": 120.33786878337126,
+              "initialization_seconds": 0.033263958,
+              "read_and_push_seconds": 0.216018042,
+              "realtime_multiple": 12.033786878337127,
+              "tracks": 38,
+              "cpu_seconds": 0.08444600000000002,
+              "max_rss_bytes": 36143104
+            }
+          ]
+        },
+        "before": {
+          "elapsed_seconds": 0.260898875,
+          "cpu_seconds": 0.07981100000000008,
+          "max_rss_bytes": 33521664,
+          "frames_per_second": 114.98708072236802
+        },
+        "after": {
+          "elapsed_seconds": 0.232116333,
+          "cpu_seconds": 0.08444600000000002,
+          "max_rss_bytes": 35209216,
+          "frames_per_second": 129.24553654740012
+        }
+      }
+    }
+  },
+  "short_cpu_check": {
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "loops": 3,
+    "binary_sha256": {
+      "before": "0a99faca179427c9888a35e6bcc8ea8993766f0dc440cd2cfea1a53937273d3d",
+      "after": "cd003a8cac5388d59c6fbd99f819eeeefb2d9a0363b753fa0ed12e0b3e180a49"
+    },
+    "cases": {
+      "cpu/interview": {
+        "input_sha256": "77bb69a4524b26973430ebf35fb28b6b58a9d491bb6005b21be3077550085254",
+        "samples": {
+          "before": [
+            {
+              "backend": "cpu",
+              "committed_frames": 132,
+              "elapsed_seconds": 0.871944334,
+              "events": 25,
+              "finish_seconds": 1.0417e-05,
+              "frames_per_second": 151.3858108286073,
+              "initialization_seconds": 6.459e-06,
+              "read_and_push_seconds": 0.871927458,
+              "realtime_multiple": 15.13858108286073,
+              "tracks": 2,
+              "cpu_seconds": 0.052642999999999995,
+              "max_rss_bytes": 9093120
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 132,
+              "elapsed_seconds": 0.607163375,
+              "events": 25,
+              "finish_seconds": 2.2792e-05,
+              "frames_per_second": 217.4044177154131,
+              "initialization_seconds": 2.917e-06,
+              "read_and_push_seconds": 0.607137666,
+              "realtime_multiple": 21.74044177154131,
+              "tracks": 2,
+              "cpu_seconds": 0.061197000000000015,
+              "max_rss_bytes": 9093120
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 132,
+              "elapsed_seconds": 0.694144833,
+              "events": 25,
+              "finish_seconds": 2.9167e-05,
+              "frames_per_second": 190.16204360337002,
+              "initialization_seconds": 7.75e-06,
+              "read_and_push_seconds": 0.694107916,
+              "realtime_multiple": 19.016204360337003,
+              "tracks": 2,
+              "cpu_seconds": 0.056173,
+              "max_rss_bytes": 9060352
+            }
+          ],
+          "after": [
+            {
+              "backend": "cpu",
+              "committed_frames": 132,
+              "elapsed_seconds": 0.797662458,
+              "events": 25,
+              "finish_seconds": 4.5167e-05,
+              "frames_per_second": 165.48353087967442,
+              "initialization_seconds": 3.3041e-05,
+              "read_and_push_seconds": 0.79758425,
+              "realtime_multiple": 16.548353087967442,
+              "tracks": 2,
+              "cpu_seconds": 0.061072,
+              "max_rss_bytes": 9060352
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 132,
+              "elapsed_seconds": 0.529026625,
+              "events": 25,
+              "finish_seconds": 3.8542e-05,
+              "frames_per_second": 249.514851922623,
+              "initialization_seconds": 5.083e-06,
+              "read_and_push_seconds": 0.528983,
+              "realtime_multiple": 24.9514851922623,
+              "tracks": 2,
+              "cpu_seconds": 0.070158,
+              "max_rss_bytes": 9109504
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 132,
+              "elapsed_seconds": 1.02490975,
+              "events": 25,
+              "finish_seconds": 1.6875e-05,
+              "frames_per_second": 128.79182776824985,
+              "initialization_seconds": 2.6625e-05,
+              "read_and_push_seconds": 1.02486625,
+              "realtime_multiple": 12.879182776824985,
+              "tracks": 2,
+              "cpu_seconds": 0.06500199999999998,
+              "max_rss_bytes": 9142272
+            }
+          ]
+        },
+        "before": {
+          "elapsed_seconds": 0.694144833,
+          "cpu_seconds": 0.056173,
+          "max_rss_bytes": 9093120,
+          "frames_per_second": 190.16204360337002
+        },
+        "after": {
+          "elapsed_seconds": 0.797662458,
+          "cpu_seconds": 0.06500199999999998,
+          "max_rss_bytes": 9109504,
+          "frames_per_second": 165.48353087967442
+        }
+      },
+      "cpu/gallery": {
+        "input_sha256": "84fa0deda2260e83f37182d06bbf2d0018d42943b9fb757df626a8cdeeb39360",
+        "samples": {
+          "before": [
+            {
+              "backend": "cpu",
+              "committed_frames": 156,
+              "elapsed_seconds": 1.381551375,
+              "events": 111,
+              "finish_seconds": 8.0958e-05,
+              "frames_per_second": 112.91653920578959,
+              "initialization_seconds": 5.667e-06,
+              "read_and_push_seconds": 1.3814647500000001,
+              "realtime_multiple": 11.291653920578959,
+              "tracks": 15,
+              "cpu_seconds": 0.10686400000000001,
+              "max_rss_bytes": 9633792
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 156,
+              "elapsed_seconds": 1.8629084580000002,
+              "events": 111,
+              "finish_seconds": 7.8333e-05,
+              "frames_per_second": 83.74002454606924,
+              "initialization_seconds": 5.542e-06,
+              "read_and_push_seconds": 1.862824583,
+              "realtime_multiple": 8.374002454606924,
+              "tracks": 15,
+              "cpu_seconds": 0.118729,
+              "max_rss_bytes": 9601024
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 156,
+              "elapsed_seconds": 1.823094625,
+              "events": 111,
+              "finish_seconds": 8.8583e-05,
+              "frames_per_second": 85.5687893874406,
+              "initialization_seconds": 5.792e-06,
+              "read_and_push_seconds": 1.82300025,
+              "realtime_multiple": 8.55687893874406,
+              "tracks": 15,
+              "cpu_seconds": 0.11783499999999997,
+              "max_rss_bytes": 9633792
+            }
+          ],
+          "after": [
+            {
+              "backend": "cpu",
+              "committed_frames": 156,
+              "elapsed_seconds": 1.237986667,
+              "events": 111,
+              "finish_seconds": 4.7125e-05,
+              "frames_per_second": 126.01105016585772,
+              "initialization_seconds": 2.5e-06,
+              "read_and_push_seconds": 1.237937042,
+              "realtime_multiple": 12.601105016585773,
+              "tracks": 15,
+              "cpu_seconds": 0.083345,
+              "max_rss_bytes": 9617408
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 156,
+              "elapsed_seconds": 1.208235417,
+              "events": 111,
+              "finish_seconds": 9.2917e-05,
+              "frames_per_second": 129.11391091923272,
+              "initialization_seconds": 2.917e-06,
+              "read_and_push_seconds": 1.208139583,
+              "realtime_multiple": 12.911391091923273,
+              "tracks": 15,
+              "cpu_seconds": 0.10077599999999995,
+              "max_rss_bytes": 9601024
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 156,
+              "elapsed_seconds": 3.225272,
+              "events": 111,
+              "finish_seconds": 4.6375e-05,
+              "frames_per_second": 48.36801361249532,
+              "initialization_seconds": 5.5e-06,
+              "read_and_push_seconds": 3.225220125,
+              "realtime_multiple": 4.836801361249532,
+              "tracks": 15,
+              "cpu_seconds": 0.10093000000000002,
+              "max_rss_bytes": 9682944
+            }
+          ]
+        },
+        "before": {
+          "elapsed_seconds": 1.823094625,
+          "cpu_seconds": 0.11783499999999997,
+          "max_rss_bytes": 9633792,
+          "frames_per_second": 85.5687893874406
+        },
+        "after": {
+          "elapsed_seconds": 1.237986667,
+          "cpu_seconds": 0.10077599999999995,
+          "max_rss_bytes": 9617408,
+          "frames_per_second": 126.01105016585772
+        }
+      },
+      "cpu/stage_and_share": {
+        "input_sha256": "dbd748dcb742f5f2e8816b74ae61fc578b88398f8916d3d5f990ccea3b3685ad",
+        "samples": {
+          "before": [
+            {
+              "backend": "cpu",
+              "committed_frames": 135,
+              "elapsed_seconds": 1.279122166,
+              "events": 29,
+              "finish_seconds": 2.0125e-05,
+              "frames_per_second": 105.54113093213334,
+              "initialization_seconds": 2.708e-06,
+              "read_and_push_seconds": 1.279099333,
+              "realtime_multiple": 10.554113093213335,
+              "tracks": 3,
+              "cpu_seconds": 0.06084000000000006,
+              "max_rss_bytes": 9158656
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 135,
+              "elapsed_seconds": 1.9399569159999999,
+              "events": 29,
+              "finish_seconds": 7.1e-05,
+              "frames_per_second": 69.58917431958062,
+              "initialization_seconds": 5.833e-06,
+              "read_and_push_seconds": 1.939880083,
+              "realtime_multiple": 6.958917431958062,
+              "tracks": 3,
+              "cpu_seconds": 0.08423800000000004,
+              "max_rss_bytes": 9125888
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 135,
+              "elapsed_seconds": 1.955541916,
+              "events": 29,
+              "finish_seconds": 1.8666e-05,
+              "frames_per_second": 69.03457240954378,
+              "initialization_seconds": 2.833e-06,
+              "read_and_push_seconds": 1.955520417,
+              "realtime_multiple": 6.903457240954379,
+              "tracks": 3,
+              "cpu_seconds": 0.09996199999999994,
+              "max_rss_bytes": 9142272
+            }
+          ],
+          "after": [
+            {
+              "backend": "cpu",
+              "committed_frames": 135,
+              "elapsed_seconds": 0.406249375,
+              "events": 29,
+              "finish_seconds": 3.125e-05,
+              "frames_per_second": 332.3082035510824,
+              "initialization_seconds": 2.5e-06,
+              "read_and_push_seconds": 0.406215625,
+              "realtime_multiple": 33.230820355108236,
+              "tracks": 3,
+              "cpu_seconds": 0.06611799999999995,
+              "max_rss_bytes": 9125888
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 135,
+              "elapsed_seconds": 1.373665541,
+              "events": 29,
+              "finish_seconds": 4.3125e-05,
+              "frames_per_second": 98.2771977389218,
+              "initialization_seconds": 6.291e-06,
+              "read_and_push_seconds": 1.373616125,
+              "realtime_multiple": 9.82771977389218,
+              "tracks": 3,
+              "cpu_seconds": 0.08173499999999995,
+              "max_rss_bytes": 9125888
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 135,
+              "elapsed_seconds": 0.881796916,
+              "events": 29,
+              "finish_seconds": 1.9708e-05,
+              "frames_per_second": 153.0964755608195,
+              "initialization_seconds": 4.458e-06,
+              "read_and_push_seconds": 0.88177275,
+              "realtime_multiple": 15.30964755608195,
+              "tracks": 3,
+              "cpu_seconds": 0.06560600000000005,
+              "max_rss_bytes": 9142272
+            }
+          ]
+        },
+        "before": {
+          "elapsed_seconds": 1.9399569159999999,
+          "cpu_seconds": 0.08423800000000004,
+          "max_rss_bytes": 9142272,
+          "frames_per_second": 69.58917431958062
+        },
+        "after": {
+          "elapsed_seconds": 0.881796916,
+          "cpu_seconds": 0.06611799999999995,
+          "max_rss_bytes": 9125888,
+          "frames_per_second": 153.0964755608195
+        }
+      },
+      "cpu/speech_control": {
+        "input_sha256": "e556ee89a8ec32dcf7e8fa14fb3f5f95ec958ab0bde690e259252c714776664c",
+        "samples": {
+          "before": [
+            {
+              "backend": "cpu",
+              "committed_frames": 72,
+              "elapsed_seconds": 0.555130334,
+              "events": 0,
+              "finish_seconds": 1.15e-05,
+              "frames_per_second": 129.6992716668947,
+              "initialization_seconds": 3.292e-06,
+              "read_and_push_seconds": 0.555115542,
+              "realtime_multiple": 12.96992716668947,
+              "tracks": 2,
+              "cpu_seconds": 0.04247500000000015,
+              "max_rss_bytes": 8962048
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 72,
+              "elapsed_seconds": 0.343969917,
+              "events": 0,
+              "finish_seconds": 4.042e-06,
+              "frames_per_second": 209.32063079225617,
+              "initialization_seconds": 5.209e-06,
+              "read_and_push_seconds": 0.343960666,
+              "realtime_multiple": 20.932063079225617,
+              "tracks": 2,
+              "cpu_seconds": 0.034453999999999985,
+              "max_rss_bytes": 8781824
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 72,
+              "elapsed_seconds": 0.6878335,
+              "events": 0,
+              "finish_seconds": 4.875e-06,
+              "frames_per_second": 104.67649511109883,
+              "initialization_seconds": 2.834e-06,
+              "read_and_push_seconds": 0.687825791,
+              "realtime_multiple": 10.467649511109883,
+              "tracks": 2,
+              "cpu_seconds": 0.036304,
+              "max_rss_bytes": 8929280
+            }
+          ],
+          "after": [
+            {
+              "backend": "cpu",
+              "committed_frames": 72,
+              "elapsed_seconds": 0.392678,
+              "events": 0,
+              "finish_seconds": 1.6166e-05,
+              "frames_per_second": 183.35633776274707,
+              "initialization_seconds": 4.542e-06,
+              "read_and_push_seconds": 0.392657292,
+              "realtime_multiple": 18.335633776274708,
+              "tracks": 2,
+              "cpu_seconds": 0.03560399999999986,
+              "max_rss_bytes": 8994816
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 72,
+              "elapsed_seconds": 0.104634167,
+              "events": 0,
+              "finish_seconds": 2.7833e-05,
+              "frames_per_second": 688.1117522539267,
+              "initialization_seconds": 2.667e-06,
+              "read_and_push_seconds": 0.104603667,
+              "realtime_multiple": 68.81117522539267,
+              "tracks": 2,
+              "cpu_seconds": 0.05016300000000007,
+              "max_rss_bytes": 8798208
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 72,
+              "elapsed_seconds": 0.64595475,
+              "events": 0,
+              "finish_seconds": 1.3167e-05,
+              "frames_per_second": 111.4629159395453,
+              "initialization_seconds": 6e-06,
+              "read_and_push_seconds": 0.645935583,
+              "realtime_multiple": 11.14629159395453,
+              "tracks": 2,
+              "cpu_seconds": 0.04881900000000006,
+              "max_rss_bytes": 8847360
+            }
+          ]
+        },
+        "before": {
+          "elapsed_seconds": 0.555130334,
+          "cpu_seconds": 0.036304,
+          "max_rss_bytes": 8929280,
+          "frames_per_second": 129.6992716668947
+        },
+        "after": {
+          "elapsed_seconds": 0.392678,
+          "cpu_seconds": 0.04881900000000006,
+          "max_rss_bytes": 8847360,
+          "frames_per_second": 183.35633776274707
+        }
+      },
+      "cpu/jitsi": {
+        "input_sha256": "fa35e288617a828a573056243317fced34cf88ab3cc1c1ac813acfd74d4c6735",
+        "samples": {
+          "before": [
+            {
+              "backend": "cpu",
+              "committed_frames": 18,
+              "elapsed_seconds": 0.371125416,
+              "events": 79,
+              "finish_seconds": 1.4041e-05,
+              "frames_per_second": 48.50112448240409,
+              "initialization_seconds": 3e-06,
+              "read_and_push_seconds": 0.371108375,
+              "realtime_multiple": 4.8501124482404085,
+              "tracks": 26,
+              "cpu_seconds": 0.02130199999999982,
+              "max_rss_bytes": 9256960
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 18,
+              "elapsed_seconds": 0.789596042,
+              "events": 79,
+              "finish_seconds": 2.6042e-05,
+              "frames_per_second": 22.79646685462995,
+              "initialization_seconds": 6e-06,
+              "read_and_push_seconds": 0.789564,
+              "realtime_multiple": 2.2796466854629953,
+              "tracks": 26,
+              "cpu_seconds": 0.034765999999999964,
+              "max_rss_bytes": 9125888
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 18,
+              "elapsed_seconds": 0.398513791,
+              "events": 79,
+              "finish_seconds": 3.4208e-05,
+              "frames_per_second": 45.16782205913672,
+              "initialization_seconds": 5.666e-06,
+              "read_and_push_seconds": 0.398473917,
+              "realtime_multiple": 4.516782205913672,
+              "tracks": 26,
+              "cpu_seconds": 0.030395000000000172,
+              "max_rss_bytes": 9142272
+            }
+          ],
+          "after": [
+            {
+              "backend": "cpu",
+              "committed_frames": 18,
+              "elapsed_seconds": 0.110123041,
+              "events": 79,
+              "finish_seconds": 2.0708e-05,
+              "frames_per_second": 163.45353194523568,
+              "initialization_seconds": 2.666e-06,
+              "read_and_push_seconds": 0.110099667,
+              "realtime_multiple": 16.345353194523568,
+              "tracks": 26,
+              "cpu_seconds": 0.021635000000000182,
+              "max_rss_bytes": 9142272
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 18,
+              "elapsed_seconds": 0.171599417,
+              "events": 79,
+              "finish_seconds": 2.2667e-05,
+              "frames_per_second": 104.8954612707105,
+              "initialization_seconds": 2.292e-06,
+              "read_and_push_seconds": 0.171574458,
+              "realtime_multiple": 10.48954612707105,
+              "tracks": 26,
+              "cpu_seconds": 0.02523799999999987,
+              "max_rss_bytes": 8978432
+            },
+            {
+              "backend": "cpu",
+              "committed_frames": 18,
+              "elapsed_seconds": 0.195888583,
+              "events": 79,
+              "finish_seconds": 3.5875e-05,
+              "frames_per_second": 91.8889693535636,
+              "initialization_seconds": 5.166e-06,
+              "read_and_push_seconds": 0.195847542,
+              "realtime_multiple": 9.18889693535636,
+              "tracks": 26,
+              "cpu_seconds": 0.031642999999999866,
+              "max_rss_bytes": 9142272
+            }
+          ]
+        },
+        "before": {
+          "elapsed_seconds": 0.398513791,
+          "cpu_seconds": 0.030395000000000172,
+          "max_rss_bytes": 9142272,
+          "frames_per_second": 45.16782205913672
+        },
+        "after": {
+          "elapsed_seconds": 0.171599417,
+          "cpu_seconds": 0.02523799999999987,
+          "max_rss_bytes": 9142272,
+          "frames_per_second": 104.8954612707105
+        }
+      }
+    }
+  },
+  "resize": {
+    "dylib_sha256": {
+      "before": "11d7cdfdee0722f78b4b56db2b0a947f0044511049cec6b70e37d81e34d6c76b",
+      "after": "0099dbf41ce6a71b164d9da496be0772b1119f99f110d215d78091f0d4465b2b"
+    },
+    "samples": {
+      "before": [
+        {
+          "wall": 0.9581496249957127,
+          "cpu": 0.182615,
+          "rss": 37945344,
+          "digest": "6d689408a12e35082685777720084ad674809defc26daf4a5a523e0d3d30838e"
+        },
+        {
+          "wall": 0.811145250001573,
+          "cpu": 0.152564,
+          "rss": 38699008,
+          "digest": "6d689408a12e35082685777720084ad674809defc26daf4a5a523e0d3d30838e"
+        },
+        {
+          "wall": 1.049415957997553,
+          "cpu": 0.166952,
+          "rss": 38518784,
+          "digest": "6d689408a12e35082685777720084ad674809defc26daf4a5a523e0d3d30838e"
+        },
+        {
+          "wall": 1.1940623330010567,
+          "cpu": 0.173412,
+          "rss": 38125568,
+          "digest": "6d689408a12e35082685777720084ad674809defc26daf4a5a523e0d3d30838e"
+        },
+        {
+          "wall": 0.6948393750062678,
+          "cpu": 0.150348,
+          "rss": 38305792,
+          "digest": "6d689408a12e35082685777720084ad674809defc26daf4a5a523e0d3d30838e"
+        }
+      ],
+      "after": [
+        {
+          "wall": 0.9362608329975046,
+          "cpu": 0.119344,
+          "rss": 38207488,
+          "digest": "6d689408a12e35082685777720084ad674809defc26daf4a5a523e0d3d30838e"
+        },
+        {
+          "wall": 0.8826152910041856,
+          "cpu": 0.117879,
+          "rss": 38109184,
+          "digest": "6d689408a12e35082685777720084ad674809defc26daf4a5a523e0d3d30838e"
+        },
+        {
+          "wall": 0.647050167004636,
+          "cpu": 0.111677,
+          "rss": 37847040,
+          "digest": "6d689408a12e35082685777720084ad674809defc26daf4a5a523e0d3d30838e"
+        },
+        {
+          "wall": 0.22515125000063563,
+          "cpu": 0.088164,
+          "rss": 37945344,
+          "digest": "6d689408a12e35082685777720084ad674809defc26daf4a5a523e0d3d30838e"
+        },
+        {
+          "wall": 0.6381294169987086,
+          "cpu": 0.102739,
+          "rss": 38125568,
+          "digest": "6d689408a12e35082685777720084ad674809defc26daf4a5a523e0d3d30838e"
+        }
+      ]
+    }
+  },
+  "sampler_microseconds_per_320_frames": {
+    "Rgb24": [
+      [
+        17582,
+        22785,
+        27255,
+        22316,
+        25109,
+        13912
+      ],
+      [
+        7443,
+        14195,
+        13185,
+        15506,
+        16784,
+        16447
+      ]
+    ],
+    "Gray8": [
+      [
+        14966,
+        17994,
+        19264,
+        11515,
+        10734,
+        23412
+      ],
+      [
+        8284,
+        8441,
+        7034,
+        5076,
+        5182,
+        8515
+      ]
+    ],
+    "Rgba8": [
+      [
+        16571,
+        15273,
+        24451,
+        18872,
+        14407,
+        14955
+      ],
+      [
+        15256,
+        11885,
+        10626,
+        13708,
+        8118,
+        9894
+      ]
+    ],
+    "Bgra8": [
+      [
+        17225,
+        20982,
+        17675,
+        31805,
+        21988,
+        27031
+      ],
+      [
+        7524,
+        9643,
+        11783,
+        15997,
+        18970,
+        12262
+      ]
+    ]
+  },
+  "overlay_microseconds_per_192_frames": [
+    [
+      60481,
+      56506,
+      67042,
+      67199,
+      61368,
+      91233
+    ],
+    [
+      42455,
+      21250,
+      41674,
+      25216,
+      24147,
+      36339
+    ]
+  ],
+  "cpu_analysis_sha256": {
+    "random-97": "4edce24ab2364544cab8b5c65b1e5ab21b165219edb837a00c42638ef9b57d15",
+    "random-166": "ad34294d939f471ae3b30587b9c4311bc051a3c56342e87d74b3ea7ad75bc43d",
+    "random-1": "1ef04506177595b1b106113a4f747836738fa3dc9abf9fc16e641c260262c7f6",
+    "random-297": "b37b0133e7f7fc00d0a126a34c02824bd076b518d22b3dfec3d351346c9cb6c5",
+    "interview": "85a298b28d6a1b8e1dcc044d7d1e0686dd83d031d22f134ac12662b41f43c076",
+    "gallery": "416a352ebfab68e0c1928abb3e6f8cde3b9b4a62b0e328e4952450f7ea83d8c2",
+    "stage_and_share": "d133af802e7e1060a6fabcb535411397043b82ba1cdd2cadb8e7800ec1d020b0",
+    "speech_control": "9c041d53c181907f6eee6cd37e9c0f1149625e62aa823d0f7a624156d25e6d64",
+    "jitsi": "7c63fe55080704a11b149df14c9e3d9d6adc58b587588b66cdb62eaa6f72cf83"
+  }
+}

@@ -1,6 +1,6 @@
 {
   "capture_date": "2026-11-23",
-  "input": "Four synthetic development cases, RGB24 at 960x540, 10 fps; one complete pass per case with the CPU backend",
+  "input": "Each CPU release processed the four synthetic development cases once, using RGB24 at 960x540 and 10 fps.",
   "comparison": "Identical pre-pass CPU detector, scorer, inputs, and compiler for both releases. Only src/tracker.rs changed. This isolates identity changes from concurrent geometry work.",
   "before": {
     "sha256": {
@@ -144,5 +144,18 @@
     "The gallery reflow introduces two visually identical camera-off cards. A participant can either have left or be represented by a card, so those links and dependent events require review.",
     "A collapsed gutter can combine two prior participants into one weakly matched rectangle. The guard keeps merged-region identity and consequent motion events provisional.",
     "The detector and ground-truth participant associations in this comparison leave one camera-off return unresolved."
-  ]
+  ],
+  "border_control": {
+    "description": "Two stationary 150x90 textured color patches in a 320x180 RGB24 frame. Green outline inside the left tile on frames 1 and 2, inside the right tile on frame 3, absent on frames 0 and 4. Independently replayed with outline widths of 1, 3, 5 and 7 source pixels.",
+    "source_frames_per_replay": 5,
+    "result_each_before_and_after": {
+      "tracks": 2,
+      "events": 0
+    }
+  },
+  "scorer": {
+    "revision": "6622551",
+    "file": "benchmarks/score_gallery.py",
+    "sha256": "089e5fcc3eae29b2d966779cc47f956d963c970d7af72cb67b6a27db397f7e5d"
+  }
 }

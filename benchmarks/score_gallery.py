@@ -12,11 +12,15 @@ IOU_THRESHOLD = 0.5
 MOTION_THRESHOLD = 0.025
 
 
-def overlap(a, b):
+def intersection_area(a, b):
     x, y, w, h = a
     u, v, width, height = b
-    area = max(0, min(x + w, u + width) - max(x, u)) * max(0, min(y + h, v + height) - max(y, v))
-    union = w * h + width * height - area
+    return max(0, min(x + w, u + width) - max(x, u)) * max(0, min(y + h, v + height) - max(y, v))
+
+
+def overlap(a, b):
+    area = intersection_area(a, b)
+    union = a[2] * a[3] + b[2] * b[3] - area
     return area / union if union > 0 else 0
 
 
@@ -46,6 +50,11 @@ def source_frame(stamp, fps):
 
 def normalized(rect, width, height):
     return tuple(value / scale for value, scale in zip(rect, (width, height, width, height)))
+
+
+def crop_edges(rect, width, height):
+    x, y, w, h = rect
+    return (x * width, y * height, (x + w) * width, (y + h) * height)
 
 
 def expected_events(frames):
@@ -116,22 +125,31 @@ def score(truth, result):
     counts = Counter()
     moments = {}
     ious = []
+    crop_edge_errors = []
+    expected_crop_area = matched_crop_area = 0.0
     first_track, owner = {}, {}
     previously_present, seen = set(), set()
     by_kind = {kind: Counter() for kind in ("video", "camera_off", "screen_share")}
     by_phase = defaultdict(Counter)
+    returns_by_phase = defaultdict(Counter)
     for index in sorted(expected.keys() | actual.keys()):
         targets, predictions = expected.get(index, []), actual.get(index, [])
-        pairs = associate(
-            [tuple(region["rect"][key] for key in ("x", "y", "width", "height")) for region in predictions],
-            [tile["normalized"] for tile in targets],
-        )
-        visible = {tile["person"] for tile in targets if tile["person"] is not None}
-        returns = (visible - previously_present) & seen
+        rectangles = [tuple(region["rect"][key] for key in ("x", "y", "width", "height")) for region in predictions]
+        pairs = associate(rectangles, [tile["normalized"] for tile in targets])
+        camera_names = Counter(tile["name"] for tile in targets if tile["kind"] == "camera_off")
+        equivocal = {j for j, tile in enumerate(targets) if tile["kind"] == "camera_off" and camera_names[tile["name"]] > 1}
+        counts["equivocal_expected"] += len(equivocal)
+        simultaneous = Counter(tile["person"] for tile in targets if tile["person"] is not None)
+        simultaneous = {person: count for person, count in simultaneous.items() if count > 1}
+        linked = defaultdict(list)
+        returns = set()
+        if index in expected:
+            visible = {tile["person"] for tile in targets if tile["person"] is not None}
+            returns = (visible - previously_present) & seen
+            seen.update(visible)
+            previously_present = visible
         counts["returns"] += len(returns)
         resolved_returns = set()
-        seen.update(visible)
-        previously_present = visible
         counts["boxes"] += len(targets)
         counts["predictions"] += len(predictions)
         counts["matches"] += len(pairs)
@@ -141,9 +159,14 @@ def score(truth, result):
         phase["false"] += len(predictions) - len(pairs)
         for tile in targets:
             by_kind[tile["kind"]]["boxes"] += 1
+            expected_crop_area += tile["normalized"][2] * tile["normalized"][3]
         for i, j, iou in pairs:
             region, tile = predictions[i], targets[j]
             ious.append(iou)
+            crop_edge_errors.extend(abs(a - b) for a, b in zip(
+                crop_edges(rectangles[i], width, height), crop_edges(tile["normalized"], width, height)
+            ))
+            matched_crop_area += intersection_area(rectangles[i], tile["normalized"])
             by_kind[tile["kind"]]["matched"] += 1
             by_kind[tile["kind"]]["correct_kind"] += region["kind"] == tile["kind"]
             counts["roles_correct"] += region["role"] == tile["role"]
@@ -159,22 +182,41 @@ def score(truth, result):
                 )
             if uncertain:
                 counts["uncertain_links"] += 1
+                counts["equivocal_uncertain"] += j in equivocal
                 continue
             if identity is None:
                 counts["unassigned_links"] += 1
+                counts["equivocal_unassigned"] += j in equivocal
                 continue
             if identity in owner and owner[identity] != person:
                 counts["wrong_links"] += 1
+                counts["equivocal_wrong"] += j in equivocal
                 continue
             owner.setdefault(identity, person)
+            if person in simultaneous:
+                linked[person].append((identity, region["appearance_id"]))
             had_reference = person in first_track
             first_track.setdefault(person, identity)
             if first_track[person] != identity:
                 counts["fragmented_links"] += 1
+                counts["equivocal_fragmented"] += j in equivocal
                 continue
+            counts["equivocal_reference"] += j in equivocal
             if had_reference and person in returns:
                 resolved_returns.add(person)
+        for person, appearances in simultaneous.items():
+            links = linked[person]
+            counts["simultaneous_expected"] += 1
+            counts["simultaneous_linked"] += (
+                len(links) == appearances
+                and len({identity for identity, _ in links}) == 1
+                and len({appearance_id for _, appearance_id in links}) == appearances
+            )
         counts["unmatched_returns"] += len(returns - resolved_returns)
+        if returns:
+            return_phase = returns_by_phase[phases.get(index, "extra_timestamps")]
+            return_phase["expected"] += len(returns)
+            return_phase["resolved"] += len(resolved_returns)
         if len(targets) != len(pairs) or len(predictions) != len(pairs):
             moments[str(index)] = {"missed": len(targets) - len(pairs), "false": len(predictions) - len(pairs)}
     want = expected_events(expected)
@@ -198,6 +240,9 @@ def score(truth, result):
         "box_precision_iou_0_5": ratio(counts["matches"], counts["predictions"]),
         "box_recall_iou_0_5": ratio(counts["matches"], counts["boxes"]),
         "mean_matched_box_iou": ratio(sum(ious), len(ious)),
+        "mean_matched_crop_edge_error_pixels": ratio(sum(crop_edge_errors), len(crop_edge_errors)),
+        "max_matched_crop_edge_error_pixels": round(max(crop_edge_errors), 4) if crop_edge_errors else None,
+        "annotated_crop_area_covered": ratio(matched_crop_area, expected_crop_area),
         "missed_boxes": counts["boxes"] - counts["matches"],
         "false_boxes": counts["predictions"] - counts["matches"],
         "matched_boxes": counts["matches"],
@@ -210,12 +255,26 @@ def score(truth, result):
         "uncertain_identity_links": counts["uncertain_links"],
         "unassigned_identity_links": counts["unassigned_links"],
         "screen_share_with_participant_id": counts["screen_share_with_identity"],
+        "duplicate_camera_off_name_cards": {
+            "expected": counts["equivocal_expected"],
+            "confirmed_reference": counts["equivocal_reference"],
+            "confirmed_wrong": counts["equivocal_wrong"],
+            "confirmed_fragmented": counts["equivocal_fragmented"],
+            "uncertain": counts["equivocal_uncertain"],
+            "unassigned": counts["equivocal_unassigned"],
+        },
+        "simultaneous_appearances": {
+            "expected_person_frames": counts["simultaneous_expected"],
+            "one_id_distinct_appearances": counts["simultaneous_linked"],
+        },
         "expected_returns": counts["returns"],
         "unmatched_returns": counts["unmatched_returns"],
+        "returns_by_layout_phase": returns_by_phase,
         "expected_events": len(want),
         "false_confirmed_events": len(confirmed) - len(boundary_errors),
         "missed_events": len(want) - len(boundary_errors),
         "uncertain_events": uncertain_events,
+        "exact_confirmed_event_matches": sum(error == 0 for error in boundary_errors),
         "event_precision_within_one_frame": ratio(len(boundary_errors), len(confirmed)),
         "event_recall_within_one_frame": ratio(len(boundary_errors), len(want)),
         "mean_event_boundary_error_frames": ratio(sum(boundary_errors), len(boundary_errors)),

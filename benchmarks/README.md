@@ -34,13 +34,33 @@ A participant's first confirmed and geometrically matched ID becomes the referen
 
 The portraits, rooms, labels, and presentation slide are drawn by the generator. Evaluate permissioned human recordings separately to measure accuracy on actual meetings. Keep the benchmark fixture and scorer fixed when comparing detectors. If this corpus is used to tune detector thresholds, use a different evaluation corpus to measure generalization.
 
+## Frozen release accuracy
+
+Run all six cases through one GPU-enabled release binary. This checks exact
+CPU/Metal result parity except for backend diagnostics, including comparisons
+of observations, participant and appearance tracks, events, and coverage.
+
+```sh
+python3 benchmarks/make_gallery.py /tmp/tiletrail-gallery-fixtures
+python3 benchmarks/make_gallery.py /tmp/tiletrail-gallery-fixtures --held-out
+cargo build --locked --release --features gpu --example gallery_benchmark
+python3 benchmarks/run_gallery_accuracy.py target/release/examples/gallery_benchmark \
+  /tmp/tiletrail-gallery-fixtures /tmp/tiletrail-gallery-raw-results \
+  /tmp/tiletrail-gallery-accuracy.json --revision "$(git rev-parse HEAD)"
+```
+
+Crop edge error is measured in source pixels for matched rectangles.
+Annotated crop coverage divides the sum of intersections for matched rectangles
+by the total annotated area, including missed rectangles. This is a geometry
+measurement. It needs a separate rendered-output test for privacy export.
+
 ## Release timing
 
 The [initial gallery snapshot](results/gallery-initial-2026-11-23.json) records
 the first pre-fix CPU results, fixture and executable hashes, and exploratory
 Metal timing. The initial CPU and Metal builds used different tracker revisions.
 
-On macOS, run `/usr/bin/time -l` and read maximum resident set size in bytes. On Linux, run `/usr/bin/time -v` and read maximum resident set size in KiB. Omit the result path for timing. This removes JSON serialization from peak RSS. Each run streams input frames through one reusable buffer. Elapsed time includes backend initialization, reading packed RGB24 frames, processing them, and committing the result. Read/push, startup, and finish times are also reported individually.
+On macOS, run `/usr/bin/time -l` and read maximum resident set size in bytes. On Linux, run `/usr/bin/time -v` and read maximum resident set size in KiB. Omit the result path for timing. This removes JSON serialization from peak RSS. Each run streams input frames through one reusable buffer. Elapsed time includes backend initialization, reading packed RGB24 frames, processing them, and committing the result. Read/push, startup, and finish times are also reported individually. The current benchmark finalizes a borrowed snapshot. At revision `d9798c1`, finalization cloned the complete history into an independent result. Both versions serialize the full result after the elapsed-time measurement when an output path is supplied. The [C snapshot comparison](results/snapshot-performance-2026-11-23.md) measures export including JSON serialization and peak process RSS.
 
 ```sh
 /usr/bin/time -l target/release/examples/gallery_benchmark cpu \

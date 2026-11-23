@@ -1,0 +1,480 @@
+{
+  "frames_per_second": 4,
+  "samples_are_clip_relative": true,
+  "fixtures": [
+    {
+      "clip": "meet-speaker.mp4",
+      "platform": "Google Meet",
+      "layout": "full-frame speaker",
+      "source_start_sec": 20,
+      "size": [
+        854,
+        480
+      ],
+      "samples": [
+        {
+          "tick": 4,
+          "tiles": [
+            {
+              "id": "a",
+              "box": [
+                0,
+                0,
+                854,
+                480
+              ],
+              "kind": "video"
+            }
+          ]
+        },
+        {
+          "tick": 12,
+          "tiles": [
+            {
+              "id": "a",
+              "box": [
+                0,
+                0,
+                854,
+                480
+              ],
+              "kind": "video"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "clip": "meet-presenter-sidebar.mp4",
+      "platform": "Google Meet",
+      "layout": "shared screen and video sidebar",
+      "source_start_sec": 480,
+      "size": [
+        854,
+        480
+      ],
+      "samples": [
+        {
+          "tick": 4,
+          "tiles": [
+            {
+              "id": "a",
+              "box": [
+                641,
+                180,
+                213,
+                120
+              ],
+              "kind": "video"
+            }
+          ]
+        },
+        {
+          "tick": 12,
+          "tiles": [
+            {
+              "id": "a",
+              "box": [
+                641,
+                180,
+                213,
+                120
+              ],
+              "kind": "video"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "clip": "meet-camera-off-sidebar.mp4",
+      "platform": "Google Meet",
+      "layout": "shared screen and camera-off sidebar",
+      "source_start_sec": 960,
+      "size": [
+        854,
+        480
+      ],
+      "samples": [
+        {
+          "tick": 4,
+          "tiles": [
+            {
+              "id": "a",
+              "box": [
+                641,
+                180,
+                213,
+                120
+              ],
+              "kind": "camera_off"
+            }
+          ]
+        },
+        {
+          "tick": 12,
+          "tiles": [
+            {
+              "id": "a",
+              "box": [
+                641,
+                180,
+                213,
+                120
+              ],
+              "kind": "camera_off"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "clip": "teams-speaker.mp4",
+      "platform": "Microsoft Teams",
+      "layout": "full-frame speaker",
+      "source_start_sec": 150,
+      "size": [
+        1024,
+        576
+      ],
+      "samples": [
+        {
+          "tick": 4,
+          "tiles": [
+            {
+              "id": "a",
+              "box": [
+                0,
+                0,
+                1024,
+                576
+              ],
+              "kind": "video"
+            }
+          ]
+        },
+        {
+          "tick": 12,
+          "tiles": [
+            {
+              "id": "a",
+              "box": [
+                0,
+                0,
+                1024,
+                576
+              ],
+              "kind": "video"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "clip": "teams-presenter-sidebar.mp4",
+      "platform": "Microsoft Teams",
+      "layout": "shared slides and video sidebar",
+      "source_start_sec": 240,
+      "size": [
+        1024,
+        576
+      ],
+      "samples": [
+        {
+          "tick": 4,
+          "tiles": [
+            {
+              "id": "a",
+              "box": [
+                820,
+                230,
+                204,
+                116
+              ],
+              "kind": "video"
+            }
+          ]
+        },
+        {
+          "tick": 12,
+          "tiles": [
+            {
+              "id": "a",
+              "box": [
+                820,
+                230,
+                204,
+                116
+              ],
+              "kind": "video"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "clip": "teams-slides-only.mp4",
+      "platform": "Microsoft Teams",
+      "layout": "shared slides with embedded portraits",
+      "source_start_sec": 390,
+      "size": [
+        1024,
+        576
+      ],
+      "samples": [
+        {
+          "tick": 4,
+          "tiles": []
+        },
+        {
+          "tick": 12,
+          "tiles": []
+        }
+      ]
+    },
+    {
+      "clip": "teams-stage-filmstrip.mp4",
+      "platform": "Microsoft Teams",
+      "layout": "speaker stage and filmstrip",
+      "source_start_sec": 20,
+      "size": [
+        1920,
+        1080
+      ],
+      "samples": [
+        {
+          "tick": 4,
+          "tiles": [
+            {
+              "id": "a",
+              "box": [
+                960,
+                0,
+                960,
+                972
+              ],
+              "kind": "video"
+            },
+            {
+              "id": "b",
+              "box": [
+                1120,
+                972,
+                200,
+                108
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "c",
+              "box": [
+                1320,
+                972,
+                200,
+                108
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "d",
+              "box": [
+                1520,
+                972,
+                200,
+                108
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "e",
+              "box": [
+                1720,
+                972,
+                200,
+                108
+              ],
+              "kind": "camera_off"
+            }
+          ]
+        },
+        {
+          "tick": 12,
+          "tiles": [
+            {
+              "id": "a",
+              "box": [
+                960,
+                0,
+                960,
+                972
+              ],
+              "kind": "video"
+            },
+            {
+              "id": "b",
+              "box": [
+                1120,
+                972,
+                200,
+                108
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "c",
+              "box": [
+                1320,
+                972,
+                200,
+                108
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "d",
+              "box": [
+                1520,
+                972,
+                200,
+                108
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "e",
+              "box": [
+                1720,
+                972,
+                200,
+                108
+              ],
+              "kind": "camera_off"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "clip": "teams-presenter-overlay.mp4",
+      "platform": "Microsoft Teams",
+      "layout": "shared slides with presenter overlay and filmstrip",
+      "source_start_sec": 1800,
+      "size": [
+        1920,
+        1080
+      ],
+      "samples": [
+        {
+          "tick": 4,
+          "tiles": [
+            {
+              "id": "a",
+              "box": [
+                1518,
+                0,
+                384,
+                174
+              ],
+              "kind": "video"
+            },
+            {
+              "id": "b",
+              "box": [
+                1120,
+                972,
+                200,
+                108
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "c",
+              "box": [
+                1320,
+                972,
+                200,
+                108
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "d",
+              "box": [
+                1520,
+                972,
+                200,
+                108
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "e",
+              "box": [
+                1720,
+                972,
+                200,
+                108
+              ],
+              "kind": "camera_off"
+            }
+          ]
+        },
+        {
+          "tick": 12,
+          "tiles": [
+            {
+              "id": "a",
+              "box": [
+                1518,
+                0,
+                384,
+                174
+              ],
+              "kind": "video"
+            },
+            {
+              "id": "b",
+              "box": [
+                1120,
+                972,
+                200,
+                108
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "c",
+              "box": [
+                1320,
+                972,
+                200,
+                108
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "d",
+              "box": [
+                1520,
+                972,
+                200,
+                108
+              ],
+              "kind": "camera_off"
+            },
+            {
+              "id": "e",
+              "box": [
+                1720,
+                972,
+                200,
+                108
+              ],
+              "kind": "camera_off"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

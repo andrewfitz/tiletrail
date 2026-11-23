@@ -7,7 +7,7 @@ description = "Track participant tiles in timestamped video frames"
 license = "MIT"
 exclude = [
     "**/__pycache__/",
-    "validation/real/media/",
+    "validation/**/media/",
     "validation/real/output/",
     "benchmarks/output/",
 ]

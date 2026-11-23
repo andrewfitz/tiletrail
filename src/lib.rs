@@ -94,17 +94,14 @@ impl Analyzer {
                 uncommitted,
             ));
         }
-        if let Err(error) = validate_frame(&frame) {
-            self.uncommitted = Some(timestamp);
-            return Err(error);
-        }
-        let measurements = match self.session.measure(&frame) {
-            Ok(measurements) => measurements,
-            Err(error) => {
-                self.uncommitted = Some(timestamp);
-                return Err(error);
-            }
-        };
+        let measurements = validate_frame(&frame)
+            .and_then(|()| self.session.measure(&frame))
+            .map_err(|mut error| {
+                // An equivalent clock can replay the frame. Keep the original
+                // source ticks as the resume point if that attempt also fails.
+                error.resume_at = *self.uncommitted.get_or_insert(timestamp);
+                error
+            })?;
         let detection = vision::detect(&measurements);
         self.tracker
             .push(&frame, detection, self.config.sampling == Sampling::Sparse);
@@ -118,6 +115,21 @@ impl Analyzer {
     /// the snapshot retains the resume point without an incomplete tail.
     /// The analyzer may continue accepting input.
     pub fn finish(&self, end: Timestamp) -> Result<AnalysisResult, AnalysisError> {
+        self.snapshot(end).map(AnalysisSnapshot::into_owned)
+    }
+
+    /// Borrow a snapshot with the same contents and range checks as
+    /// [`Analyzer::finish`]. Serialize it directly to a writer to avoid
+    /// copying the frame history or building a JSON buffer in memory.
+    ///
+    /// ```
+    /// # use tiletrail::{Analyzer, Timestamp};
+    /// # fn save(analyzer: &Analyzer, end: Timestamp, writer: impl std::io::Write)
+    /// #     -> Result<(), Box<dyn std::error::Error>> {
+    /// serde_json::to_writer(writer, &analyzer.snapshot(end)?)?;
+    /// # Ok(()) }
+    /// ```
+    pub fn snapshot(&self, end: Timestamp) -> Result<AnalysisSnapshot<'_>, AnalysisError> {
         if !self.start.before(end)
             || self
                 .tracker
@@ -160,17 +172,17 @@ impl Analyzer {
         }
         append_coverage(&mut coverage, covered_end, end, Coverage::Incomplete);
 
-        Ok(AnalysisResult {
+        Ok(AnalysisSnapshot {
             schema_version: RESULT_SCHEMA_VERSION,
             start: self.start,
             end,
             sampling: self.config.sampling,
-            observations: observations.clone(),
-            tracks: self.tracker.tracks.clone(),
+            observations,
+            tracks: &self.tracker.tracks,
             appearances: self.tracker.appearances_at_end(covered_end),
-            events: self.tracker.events.clone(),
+            events: &self.tracker.events,
             coverage,
-            diagnostics: self.diagnostics().to_vec(),
+            diagnostics: self.diagnostics(),
             resume_at: self.uncommitted,
         })
     }
@@ -410,8 +422,16 @@ mod tests {
             })
             .unwrap_err();
 
+        let retry = analyzer
+            .push(Frame {
+                timestamp: end,
+                ..frame(&[], 0)
+            })
+            .unwrap_err();
+        assert_eq!(retry.resume_at, failed);
         let snapshot = analyzer.finish(end).unwrap();
-        let json = serde_json::to_vec(&snapshot).unwrap();
+        let json = serde_json::to_vec(&analyzer.snapshot(end).unwrap()).unwrap();
+        assert_eq!(json, serde_json::to_vec(&snapshot).unwrap());
         let restored: AnalysisResult = serde_json::from_slice(&json).unwrap();
         assert_eq!(restored.start, start);
         assert_eq!(restored.end, end);

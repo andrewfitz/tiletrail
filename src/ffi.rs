@@ -291,7 +291,7 @@ unsafe extern "C" fn tiletrail_analyzer_result_json(
         if handle.panicked {
             return Err(Failure::panic());
         }
-        let result = handle.analyzer.finish(end.into())?;
+        let result = handle.analyzer.snapshot(end.into())?;
         // SAFETY: out points to writable storage exclusively borrowed for the call.
         unsafe { write_json(out, &result) }
     })

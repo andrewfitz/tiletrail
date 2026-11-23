@@ -18,6 +18,20 @@ Peak RSS fell by 2.8–5.9 MiB. Wall time improved for the interview and stage/s
 
 Original Metal, updated Metal and CPU produced identical analysis JSON after removing backend diagnostics for all five timed fixtures. The Metal tests also exercise byte-exact sampled pixels, workspace resizing, staged transfers and recovery after device loss or a readback panic.
 
+## Metal resource allocation
+
+A scratch profiler compiled the original and updated hardware modules against the same wgpu and Metal dependencies. It submitted all 195 frames from the five timing fixtures through the actual Metal measurement and readback path, with one fresh device per clip and backend version. On every frame it sampled the device's `currentAllocatedSize` after upload preparation, before and after submission, and after readback. It also sampled after device and pipeline initialization. All five clips reported the same phase maxima at 960×540 RGB24. [Apple Metal resource counter](https://developer.apple.com/documentation/metal/mtldevice/currentallocatedsize)
+
+| Phase | Original bytes | Updated bytes |
+| --- | ---: | ---: |
+| Initialization | 999,424 | 999,424 |
+| Upload prepared | 4,538,368 | 1,572,864 |
+| Before submit | 4,538,368 | 1,572,864 |
+| After submit | 4,538,368 | 1,572,864 |
+| After readback | 2,850,816 | 1,572,864 |
+
+The highest sampled Metal resource allocation fell 65.3%, from 4.33 to 1.50 MiB. This counter measures allocated Metal resources on the device. Phase sampling can miss transient allocations between samples, and the counter does not establish physical residency or total system driver memory on Apple Silicon's unified memory.
+
 ## Reproduce
 
 Build `gallery_benchmark` with `cargo build --locked --release --features gpu --example gallery_benchmark` from each GPU revision against the same detector and tracker. Copy each binary to a temporary path before building the other variant.

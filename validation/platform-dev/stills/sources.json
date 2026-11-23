@@ -1,0 +1,40 @@
+{
+  "purpose": "Development only. Still images for spatial scoring.",
+  "encoding_command": "ffmpeg -loop 1 -framerate 12 -i IMAGE -t 1 -an -vf \"pad=ceil(iw/2)*2:ceil(ih/2)*2\" -c:v libx264 -preset fast -crf 18 -pix_fmt yuv420p OUTPUT.mp4",
+  "sources": {
+    "meet-gallery-01.mp4": {
+      "credit": "Sachin Patel 78",
+      "date": "2026-04-23",
+      "license": "CC-BY-SA-4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "page": "https://commons.wikimedia.org/wiki/File:Screenshot_of_an_online_meeting_session_of_Wiki_Club_SATI_conducted_via_Google_Meet_on_World_Book_Day%2C_showing_multiple_participants_actively_engaged_in_the_discussion_01.png",
+      "input_url": "https://upload.wikimedia.org/wikipedia/commons/a/aa/Screenshot_of_an_online_meeting_session_of_Wiki_Club_SATI_conducted_via_Google_Meet_on_World_Book_Day%2C_showing_multiple_participants_actively_engaged_in_the_discussion_01.png"
+    },
+    "meet-gallery-05.mp4": {
+      "credit": "Sachin Patel 78",
+      "date": "2026-04-23",
+      "license": "CC-BY-SA-4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "page": "https://commons.wikimedia.org/wiki/File:Screenshot_of_an_online_meeting_session_of_Wiki_Club_SATI_conducted_via_Google_Meet_on_World_Book_Day%2C_showing_multiple_participants_actively_engaged_in_the_discussion_05.png",
+      "input_url": "https://upload.wikimedia.org/wikipedia/commons/0/08/Screenshot_of_an_online_meeting_session_of_Wiki_Club_SATI_conducted_via_Google_Meet_on_World_Book_Day%2C_showing_multiple_participants_actively_engaged_in_the_discussion_05.png"
+    },
+    "teams-gallery-2x2.mp4": {
+      "credit": "Navy Supply Corps School staff",
+      "license": "Public domain, U.S. government work",
+      "license_url": "https://www.dvidshub.net/about/copyright",
+      "input_url": "https://media-cdn.dvidshub.net/pubs/pdf_56251.pdf",
+      "pdf_page": 32,
+      "extracted_image_index": "003",
+      "extraction_command": "pdfimages -f 32 -l 32 -j INPUT.pdf PREFIX"
+    },
+    "teams-gallery-3.mp4": {
+      "credit": "311th Signal Command (Theater) Public Affairs Team",
+      "license": "Public domain, U.S. government work",
+      "license_url": "https://www.dvidshub.net/about/copyright",
+      "input_url": "https://media-cdn.dvidshub.net/pubs/pdf_55704.pdf",
+      "pdf_page": 42,
+      "extracted_image_index": "000",
+      "extraction_command": "pdfimages -f 42 -l 42 -j INPUT.pdf PREFIX"
+    }
+  }
+}

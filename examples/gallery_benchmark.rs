@@ -70,7 +70,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     }
     let pushed = Instant::now();
-    let result = analyzer.finish(Timestamp::new(committed, 1, fps))?;
+    let result = analyzer.snapshot(Timestamp::new(committed, 1, fps))?;
     let finished = Instant::now();
     let elapsed = (finished - start).as_secs_f64();
     println!(

@@ -1,0 +1,214 @@
+{
+  "schema_version": 1,
+  "start": {
+    "pts": 0,
+    "time_base": {
+      "numerator": 1,
+      "denominator": 10
+    }
+  },
+  "end": {
+    "pts": 2,
+    "time_base": {
+      "numerator": 1,
+      "denominator": 10
+    }
+  },
+  "sampling": "every_frame",
+  "observations": [
+    {
+      "timestamp": {
+        "pts": 0,
+        "time_base": {
+          "numerator": 1,
+          "denominator": 10
+        }
+      },
+      "display": {
+        "rotation": "R0",
+        "pixel_aspect_num": 1,
+        "pixel_aspect_den": 1
+      },
+      "confidence": 1.0,
+      "regions": [
+        {
+          "appearance_id": 1,
+          "participant_id": 1,
+          "rect": {
+            "x": 0.0,
+            "y": 0.25,
+            "width": 0.49609375,
+            "height": 0.5
+          },
+          "kind": "video",
+          "role": "primary",
+          "confidence": 1.0,
+          "identity_confidence": null,
+          "identity_uncertain": false,
+          "possible_matches": []
+        },
+        {
+          "appearance_id": 2,
+          "participant_id": 2,
+          "rect": {
+            "x": 0.50390625,
+            "y": 0.25,
+            "width": 0.49609375,
+            "height": 0.5
+          },
+          "kind": "video",
+          "role": "primary",
+          "confidence": 1.0,
+          "identity_confidence": null,
+          "identity_uncertain": false,
+          "possible_matches": []
+        }
+      ]
+    },
+    {
+      "timestamp": {
+        "pts": 1,
+        "time_base": {
+          "numerator": 1,
+          "denominator": 10
+        }
+      },
+      "display": {
+        "rotation": "R0",
+        "pixel_aspect_num": 1,
+        "pixel_aspect_den": 1
+      },
+      "confidence": 1.0,
+      "regions": [
+        {
+          "appearance_id": 1,
+          "participant_id": 1,
+          "rect": {
+            "x": 0.0,
+            "y": 0.25,
+            "width": 0.49609375,
+            "height": 0.5
+          },
+          "kind": "video",
+          "role": "primary",
+          "confidence": 1.0,
+          "identity_confidence": 0.993,
+          "identity_uncertain": false,
+          "possible_matches": [
+            {
+              "participant_id": 1,
+              "confidence": 0.993
+            }
+          ]
+        },
+        {
+          "appearance_id": 2,
+          "participant_id": 2,
+          "rect": {
+            "x": 0.50390625,
+            "y": 0.25,
+            "width": 0.49609375,
+            "height": 0.5
+          },
+          "kind": "video",
+          "role": "primary",
+          "confidence": 1.0,
+          "identity_confidence": 0.995,
+          "identity_uncertain": false,
+          "possible_matches": [
+            {
+              "participant_id": 2,
+              "confidence": 0.995
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "tracks": [
+    {
+      "id": 1,
+      "appearance_ids": [
+        1
+      ]
+    },
+    {
+      "id": 2,
+      "appearance_ids": [
+        2
+      ]
+    }
+  ],
+  "appearances": [
+    {
+      "id": 1,
+      "participant_id": 1,
+      "start": {
+        "pts": 0,
+        "time_base": {
+          "numerator": 1,
+          "denominator": 10
+        }
+      },
+      "end": {
+        "pts": 2,
+        "time_base": {
+          "numerator": 1,
+          "denominator": 10
+        }
+      }
+    },
+    {
+      "id": 2,
+      "participant_id": 2,
+      "start": {
+        "pts": 0,
+        "time_base": {
+          "numerator": 1,
+          "denominator": 10
+        }
+      },
+      "end": {
+        "pts": 2,
+        "time_base": {
+          "numerator": 1,
+          "denominator": 10
+        }
+      }
+    }
+  ],
+  "events": [],
+  "coverage": [
+    {
+      "start": {
+        "pts": 0,
+        "time_base": {
+          "numerator": 1,
+          "denominator": 10
+        }
+      },
+      "end": {
+        "pts": 2,
+        "time_base": {
+          "numerator": 1,
+          "denominator": 10
+        }
+      },
+      "status": "observed"
+    }
+  ],
+  "diagnostics": [
+    {
+      "timestamp": {
+        "pts": 0,
+        "time_base": {
+          "numerator": 1,
+          "denominator": 10
+        }
+      },
+      "backend": "cpu",
+      "reason": null
+    }
+  ],
+  "resume_at": null
+}
