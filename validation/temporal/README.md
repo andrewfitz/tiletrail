@@ -33,24 +33,26 @@ This small sample covers one real grid reflow, one brief visible camera-state tr
 
 ## Results
 
-CPU builds of `ddec86e` and `d9798c1` were scored on macOS arm64 with FFmpeg 9.0.2. The raw reports include one record per expected event. [Initial report](results/ddec86e.json) · [Revised detector report](results/d9798c1.json)
+The scorer used the CPU on macOS arm64 with FFmpeg 9.0.2. The initial and first revised libraries were built with CPU-only features. The final library was built at `f1cdfb6292f7860ee7a3ca46c9c64e25fe480d7b` with `cargo build --locked --release --features gpu`, and the scorer selected CPU mode explicitly. [Initial report](results/ddec86e.json) · [First revision report](results/d9798c1.json) · [Final report](results/f1cdfb6.json)
 
-| Case and measure | Initial | Revised |
-| --- | ---: | ---: |
-| Jitsi dense, matched boxes | 58/90 | 82/90 |
-| Jitsi dense, same-ID anchor pairs (certain) | 47/80 (47) | 63/80 (28) |
-| Jitsi dense, matched timed events | 4/14 | 1/14 |
-| Jitsi dense, events in stable window | 24 | 12 |
-| Jitsi sparse, matched boxes | 30/50 | 50/50 |
-| Jitsi sparse, same-ID anchor pairs (certain) | 21/40 (21) | 33/40 (19) |
-| Jitsi sparse, matched timed and uncertainty-marked events | 5/12 | 2/12 |
-| Jitsi sparse, omitted ticks with inferred coverage | 11/11 | 11/11 |
-| Jitsi sparse, events in stable window | 24 | 0 |
-| Zoom dense, matched boxes | 7/24 | 24/24 |
-| Zoom dense, same-ID anchor pairs (certain) | 1/21 (1) | 19/21 (16) |
-| Zoom dense, events in stable window | 24 | 22 |
+| Case and measure | Initial `ddec86e` | First revision `d9798c1` | Final `f1cdfb6` |
+| --- | ---: | ---: | ---: |
+| Jitsi dense, matched boxes | 58/90 | 82/90 | 82/90 |
+| Jitsi dense, same-ID anchor pairs (certain) | 47/80 (47) | 63/80 (28) | 68/80 (63) |
+| Jitsi dense, matched timed events | 4/14 | 1/14 | 7/14 |
+| Jitsi dense, events in stable window | 24 | 12 | 12 |
+| Jitsi sparse, matched boxes | 30/50 | 50/50 | 50/50 |
+| Jitsi sparse, same-ID anchor pairs (certain) | 21/40 (21) | 33/40 (19) | 40/40 (40) |
+| Jitsi sparse, matched timed and uncertainty-marked events | 5/12 | 2/12 | 12/12 |
+| Jitsi sparse, omitted ticks with inferred coverage | 11/11 | 11/11 | 11/11 |
+| Jitsi sparse, events in stable window | 24 | 0 | 0 |
+| Zoom dense, matched boxes | 7/24 | 24/24 | 24/24 |
+| Zoom dense, same-ID anchor pairs (certain) | 1/21 (1) | 19/21 (16) | 21/21 (21) |
+| Zoom dense, events in stable window | 24 | 22 | 1 |
 
-Every matched event landed on its labeled tick. The revised build found all submitted Zoom and sparse Jitsi anchor boxes but still broke identities across the Jitsi reflow. It identified James F.'s avatar and video states on matched anchors and missed both corresponding timed events. Neither build timed the three Jitsi resizes successfully. Zoom video geometry stayed stable at the labeled anchors, yet the revised build emitted 22 events during the stable interval, including 13 marked certain. The sparse test verifies that the two matched moves are marked uncertain after a controlled omission.
+Every matched event landed on its labeled tick. The final build recovered six moves and one resize in dense Jitsi. Two missing bottom-row boxes prevented four move or resize matches. The brief avatar transition interrupted James F.'s identity thread, accounting for one missed move and both missed camera-state events. The dense Jitsi stable window still produced 12 extra events, four marked certain.
+
+The final build matched all 12 sparse moves and resizes at the first post-gap sample, with uncertainty on each event. Zoom preserved all anchor identities and emitted one extra, certain leave over the stable interval. These excerpts remain development evidence. A separate paired run isolates the tracking changes on real and generated development cases. [Tracker development report](../../benchmarks/results/temporal-tracker-development-2026-11-23.json)
 
 ## Attribution and reproduction
 

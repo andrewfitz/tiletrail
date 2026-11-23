@@ -1,0 +1,384 @@
+{
+  "jitsi-dense": {
+    "anchors": {
+      "labeled": 90,
+      "matched": 82,
+      "camera_state_matches": 82
+    },
+    "continuity": {
+      "pairs": 80,
+      "different_id_provisional": 2,
+      "missing_geometry": 10,
+      "same_id_certain": 63,
+      "same_id_provisional": 5
+    },
+    "expected_events": 14,
+    "event_outcomes": {
+      "matched": 7,
+      "missing_geometry": 4,
+      "missing_identity": 3
+    },
+    "negative_window_events": 12,
+    "negative_window_breakdown": {
+      "enter_certain": 2,
+      "enter_uncertain": 4,
+      "leave_certain": 1,
+      "leave_uncertain": 4,
+      "resize_certain": 1
+    },
+    "dropped_tick_coverage": {},
+    "details": [
+      {
+        "id": "nick",
+        "kind": "move",
+        "tick": 9,
+        "anchors": [
+          8,
+          9
+        ],
+        "status": "matched",
+        "tick_error": 0,
+        "reported_uncertain": false
+      },
+      {
+        "id": "richard",
+        "kind": "move",
+        "tick": 9,
+        "anchors": [
+          8,
+          9
+        ],
+        "status": "matched",
+        "tick_error": 0,
+        "reported_uncertain": false
+      },
+      {
+        "id": "david",
+        "kind": "move",
+        "tick": 9,
+        "anchors": [
+          8,
+          9
+        ],
+        "status": "matched",
+        "tick_error": 0,
+        "reported_uncertain": false
+      },
+      {
+        "id": "egbe",
+        "kind": "move",
+        "tick": 9,
+        "anchors": [
+          8,
+          9
+        ],
+        "status": "matched",
+        "tick_error": 0,
+        "reported_uncertain": false
+      },
+      {
+        "id": "james",
+        "kind": "move",
+        "tick": 9,
+        "anchors": [
+          8,
+          9
+        ],
+        "status": "missing_identity"
+      },
+      {
+        "id": "luca",
+        "kind": "move",
+        "tick": 9,
+        "anchors": [
+          8,
+          9
+        ],
+        "status": "matched",
+        "tick_error": 0,
+        "reported_uncertain": false
+      },
+      {
+        "id": "mahuton",
+        "kind": "move",
+        "tick": 9,
+        "anchors": [
+          8,
+          9
+        ],
+        "status": "missing_geometry"
+      },
+      {
+        "id": "nicolas",
+        "kind": "move",
+        "tick": 9,
+        "anchors": [
+          8,
+          9
+        ],
+        "status": "missing_geometry"
+      },
+      {
+        "id": "terasail",
+        "kind": "move",
+        "tick": 9,
+        "anchors": [
+          8,
+          9
+        ],
+        "status": "matched",
+        "tick_error": 0,
+        "reported_uncertain": false
+      },
+      {
+        "id": "mahuton",
+        "kind": "resize",
+        "tick": 9,
+        "anchors": [
+          8,
+          9
+        ],
+        "status": "missing_geometry"
+      },
+      {
+        "id": "nicolas",
+        "kind": "resize",
+        "tick": 9,
+        "anchors": [
+          8,
+          9
+        ],
+        "status": "missing_geometry"
+      },
+      {
+        "id": "terasail",
+        "kind": "resize",
+        "tick": 9,
+        "anchors": [
+          8,
+          9
+        ],
+        "status": "matched",
+        "tick_error": 0,
+        "reported_uncertain": false
+      },
+      {
+        "id": "james",
+        "kind": "camera_state",
+        "tick": 9,
+        "anchors": [
+          8,
+          9
+        ],
+        "status": "missing_identity"
+      },
+      {
+        "id": "james",
+        "kind": "camera_state",
+        "tick": 11,
+        "anchors": [
+          10,
+          11
+        ],
+        "status": "missing_identity"
+      }
+    ]
+  },
+  "jitsi-sparse": {
+    "anchors": {
+      "labeled": 50,
+      "matched": 50,
+      "camera_state_matches": 50
+    },
+    "continuity": {
+      "pairs": 40,
+      "same_id_certain": 40
+    },
+    "expected_events": 12,
+    "event_outcomes": {
+      "matched": 12
+    },
+    "negative_window_events": 0,
+    "negative_window_breakdown": {},
+    "dropped_tick_coverage": {
+      "inferred": 11
+    },
+    "details": [
+      {
+        "id": "nick",
+        "kind": "move",
+        "tick": 20,
+        "anchors": [
+          8,
+          20
+        ],
+        "uncertain": true,
+        "status": "matched",
+        "tick_error": 0,
+        "reported_uncertain": true
+      },
+      {
+        "id": "richard",
+        "kind": "move",
+        "tick": 20,
+        "anchors": [
+          8,
+          20
+        ],
+        "uncertain": true,
+        "status": "matched",
+        "tick_error": 0,
+        "reported_uncertain": true
+      },
+      {
+        "id": "david",
+        "kind": "move",
+        "tick": 20,
+        "anchors": [
+          8,
+          20
+        ],
+        "uncertain": true,
+        "status": "matched",
+        "tick_error": 0,
+        "reported_uncertain": true
+      },
+      {
+        "id": "egbe",
+        "kind": "move",
+        "tick": 20,
+        "anchors": [
+          8,
+          20
+        ],
+        "uncertain": true,
+        "status": "matched",
+        "tick_error": 0,
+        "reported_uncertain": true
+      },
+      {
+        "id": "james",
+        "kind": "move",
+        "tick": 20,
+        "anchors": [
+          8,
+          20
+        ],
+        "uncertain": true,
+        "status": "matched",
+        "tick_error": 0,
+        "reported_uncertain": true
+      },
+      {
+        "id": "luca",
+        "kind": "move",
+        "tick": 20,
+        "anchors": [
+          8,
+          20
+        ],
+        "uncertain": true,
+        "status": "matched",
+        "tick_error": 0,
+        "reported_uncertain": true
+      },
+      {
+        "id": "mahuton",
+        "kind": "move",
+        "tick": 20,
+        "anchors": [
+          8,
+          20
+        ],
+        "uncertain": true,
+        "status": "matched",
+        "tick_error": 0,
+        "reported_uncertain": true
+      },
+      {
+        "id": "nicolas",
+        "kind": "move",
+        "tick": 20,
+        "anchors": [
+          8,
+          20
+        ],
+        "uncertain": true,
+        "status": "matched",
+        "tick_error": 0,
+        "reported_uncertain": true
+      },
+      {
+        "id": "terasail",
+        "kind": "move",
+        "tick": 20,
+        "anchors": [
+          8,
+          20
+        ],
+        "uncertain": true,
+        "status": "matched",
+        "tick_error": 0,
+        "reported_uncertain": true
+      },
+      {
+        "id": "mahuton",
+        "kind": "resize",
+        "tick": 20,
+        "anchors": [
+          8,
+          20
+        ],
+        "uncertain": true,
+        "status": "matched",
+        "tick_error": 0,
+        "reported_uncertain": true
+      },
+      {
+        "id": "nicolas",
+        "kind": "resize",
+        "tick": 20,
+        "anchors": [
+          8,
+          20
+        ],
+        "uncertain": true,
+        "status": "matched",
+        "tick_error": 0,
+        "reported_uncertain": true
+      },
+      {
+        "id": "terasail",
+        "kind": "resize",
+        "tick": 20,
+        "anchors": [
+          8,
+          20
+        ],
+        "uncertain": true,
+        "status": "matched",
+        "tick_error": 0,
+        "reported_uncertain": true
+      }
+    ]
+  },
+  "zoom-dense": {
+    "anchors": {
+      "labeled": 24,
+      "matched": 24,
+      "camera_state_matches": 24
+    },
+    "continuity": {
+      "pairs": 21,
+      "same_id_certain": 21
+    },
+    "expected_events": 0,
+    "event_outcomes": {},
+    "negative_window_events": 1,
+    "negative_window_breakdown": {
+      "leave_certain": 1
+    },
+    "dropped_tick_coverage": {},
+    "details": []
+  }
+}
