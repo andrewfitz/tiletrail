@@ -9,6 +9,7 @@ extern "C" {
 
 #define TILETRAIL_ABI_VERSION 1u
 #define TILETRAIL_HAS_FEED_LAYOUTS 1
+#define TILETRAIL_FEED_DETECTOR_REVISION 2u
 
 typedef struct tiletrail_analyzer tiletrail_analyzer_t;
 

@@ -38,7 +38,7 @@ def camera_files(cache):
         dest.write_bytes(data)
 
 
-def composite(cache, name, boxes):
+def composite(cache, name, boxes, nv12):
     inputs = list(CLIPS)[:len(boxes)] if len(boxes) > 1 else ["bus"]
     command = ["ffmpeg", "-nostdin", "-y", "-v", "error"]
     for source in inputs:
@@ -61,8 +61,12 @@ def composite(cache, name, boxes):
     movie, raw = cache / (name + ".mp4"), cache / (name + ".rgb")
     subprocess.run(command + ["-filter_complex", ";".join(graph), "-map", "[out]", "-frames:v", "12",
                               "-c:v", "libx264", "-crf", "18", str(movie)], check=True)
-    subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-y", "-i", str(movie), "-pix_fmt", "rgb24",
-                    "-f", "rawvideo", str(raw)], check=True)
+    decode = ["ffmpeg", "-nostdin", "-v", "error", "-y", "-i", str(movie)]
+    if nv12:
+        # Exercise bilinear color upsampling from the format used by VideoToolbox.
+        decode += ["-vf", "format=nv12,scale=in_color_matrix=bt601:in_range=tv:out_range=pc:flags=bilinear"]
+        raw = cache / (name + "-nv12.rgb")
+    subprocess.run(decode + ["-pix_fmt", "rgb24", "-f", "rawvideo", str(raw)], check=True)
     return raw
 
 
@@ -73,10 +77,10 @@ def overlap(box, pred):
     return area / (w * h + pw * ph - area)
 
 
-def score(cache, library, layout, backend):
+def score(cache, library, layout, backend, nv12):
     scores = {}
     for name, boxes in CASES.items():
-        raw = composite(cache, name, boxes)
+        raw = composite(cache, name, boxes, nv12)
         width, height = max(x + w for x, _, w, _ in boxes), max(y + h for _, y, _, h in boxes)
         expected = [(x / width, y / height, w / width, h / height) for x, y, w, h in boxes]
         frames = json.loads(analyze(library, raw, width, height, 0, 1, 8, layout, backend=backend))["observations"]
@@ -108,8 +112,9 @@ if __name__ == "__main__":
     parser.add_argument("--cache", type=Path, default=ROOT / "target" / "feed-validation")
     parser.add_argument("--meeting", action="store_true", help="measure the original meeting detector")
     parser.add_argument("--gpu", action="store_true", help="require hardware acceleration")
+    parser.add_argument("--nv12", action="store_true", help="use an NV12 intermediate and bilinear RGB conversion")
     args = parser.parse_args()
     args.cache.mkdir(parents=True, exist_ok=True)
     camera_files(args.cache)
     print(json.dumps(score(args.cache, load_library(args.library), None if args.meeting else (0, 0),
-                           2 if args.gpu else 1), indent=2))
+                           2 if args.gpu else 1, args.nv12), indent=2))

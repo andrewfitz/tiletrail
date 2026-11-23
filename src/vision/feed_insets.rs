@@ -3,8 +3,9 @@
 use super::{Bounds, MAX_TILES, Measurements, color_gap};
 
 const MIN_INSIDE: usize = 16;
-const MAX_TRIM_GAP: u8 = 18;
-const MIN_EDGE: u8 = 22;
+// A chroma-interpolated edge can mute a full row of otherwise uniform trim.
+const MAX_TRIM_GAP: u8 = 26;
+const MIN_EDGE: u8 = 32;
 const COLOR_BIN_WIDTH: usize = 8;
 
 pub(super) fn find(image: &Measurements, frame: Bounds) -> Vec<Bounds> {

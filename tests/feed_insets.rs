@@ -204,8 +204,12 @@ fn automatic_keeps_inset_geometry_with_perturbed_trim_and_low_contrast_backgroun
                 let shift = ((x / 4 + y / 4) % 9) as u8;
                 pixel[0] += shift;
                 pixel[1] += 2 * shift;
-                if x == trim.left + 1 && y == trim.top + 7 {
+                if y == trim.top + trim.trim - 1 || y == trim.bottom - 1 {
+                    // Chroma interpolation can affect almost the whole edge row.
                     pixel[2] += 24;
+                }
+                if x == trim.left + 1 && y == trim.top + 7 {
+                    pixel[2] += 34;
                 }
             }
         }
