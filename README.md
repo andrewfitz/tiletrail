@@ -4,6 +4,8 @@ TileTrail tracks participant tiles across layout changes in video recordings. Su
 
 ## Analyze frames from Rust
 
+From a Rust application next to this checkout, run `cargo add tiletrail --path ../tiletrail --features gpu`. A consumer can also use a local directory extracted from the packaged `.crate` archive. Supply decoded frames through the Rust API below.
+
 ```rust
 use tiletrail::{Analyzer, AnalyzerConfig, Frame, PixelFormat, Timestamp};
 
