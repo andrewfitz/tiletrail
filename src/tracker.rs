@@ -40,7 +40,97 @@ pub(crate) struct Tracker {
     has_baseline: bool,
 }
 
+/// Everything a push can change apart from appending one observation.
+pub(crate) struct Checkpoint {
+    observations: usize,
+    tracks: Vec<ParticipantTrack>,
+    appearances: Vec<Appearance>,
+    events: usize,
+    active: Vec<Sample>,
+    dormant: BTreeMap<ParticipantId, Sample>,
+    uncertain_gap: bool,
+    has_baseline: bool,
+}
+
+fn moved(a: Rect, b: Rect) -> bool {
+    (a.x + a.width * 0.5 - b.x - b.width * 0.5).abs() > 0.025
+        || (a.y + a.height * 0.5 - b.y - b.height * 0.5).abs() > 0.025
+}
+
+fn resized(a: Rect, b: Rect) -> bool {
+    (a.width - b.width).abs() > 0.025 || (a.height - b.height).abs() > 0.025
+}
+
+/// Identities other than the assigned one that a reviewer is asked to weigh.
+fn rivals(region: &RegionObservation) -> impl Iterator<Item = ParticipantId> + '_ {
+    region
+        .possible_matches
+        .iter()
+        .map(|option| option.participant_id)
+        .filter(|&id| Some(id) != region.participant_id)
+}
+
+fn same_region(prior: &RegionObservation, region: &RegionObservation) -> bool {
+    prior.appearance_id == region.appearance_id
+        && prior.participant_id == region.participant_id
+        && prior.kind == region.kind
+        && prior.role == region.role
+        && prior.identity_uncertain == region.identity_uncertain
+        && !moved(prior.rect, region.rect)
+        && !resized(prior.rect, region.rect)
+        && rivals(prior).all(|id| rivals(region).any(|other| other == id))
+        && rivals(region).all(|id| rivals(prior).any(|other| other == id))
+}
+
 impl Tracker {
+    pub(crate) fn checkpoint(&self) -> Checkpoint {
+        Checkpoint {
+            observations: self.observations.len(),
+            tracks: self.tracks.clone(),
+            appearances: self.appearances.clone(),
+            events: self.events.len(),
+            active: self.active.clone(),
+            dormant: self.dormant.clone(),
+            uncertain_gap: self.uncertain_gap,
+            has_baseline: self.has_baseline,
+        }
+    }
+
+    /// Discard every push made after the checkpoint.
+    pub(crate) fn restore(&mut self, saved: Checkpoint) {
+        self.observations.truncate(saved.observations);
+        self.events.truncate(saved.events);
+        self.tracks = saved.tracks;
+        self.appearances = saved.appearances;
+        self.active = saved.active;
+        self.dormant = saved.dormant;
+        self.uncertain_gap = saved.uncertain_gap;
+        self.has_baseline = saved.has_baseline;
+    }
+
+    /// Report whether the single push after the checkpoint left every region
+    /// where the preceding observation had it: the same appearances, identity
+    /// state, kinds and roles, within the geometry tolerance of a move or
+    /// resize event, with both layouts readable and no event recorded.
+    pub(crate) fn continues(&self, saved: &Checkpoint) -> bool {
+        let [.., previous, current] = self.observations.as_slice() else {
+            return false;
+        };
+        self.observations.len() == saved.observations + 1
+            && self.events.len() == saved.events
+            && self.tracks.len() == saved.tracks.len()
+            && self.appearances.len() == saved.appearances.len()
+            && previous.confidence >= MIN_LAYOUT_CONFIDENCE
+            && current.confidence >= MIN_LAYOUT_CONFIDENCE
+            && previous.regions.len() == current.regions.len()
+            && current.regions.iter().all(|region| {
+                previous
+                    .regions
+                    .iter()
+                    .any(|prior| same_region(prior, region))
+            })
+    }
+
     pub(crate) fn push(&mut self, frame: &Frame<'_>, detection: Detection, sparse: bool) {
         let timestamp = frame.timestamp;
         if detection.confidence < MIN_LAYOUT_CONFIDENCE {
@@ -415,12 +505,10 @@ impl Tracker {
             let uncertain = uncertain || prior.uncertain || current.uncertain;
             let a = prior.tile.rect;
             let b = current.tile.rect;
-            if (a.x + a.width * 0.5 - b.x - b.width * 0.5).abs() > 0.025
-                || (a.y + a.height * 0.5 - b.y - b.height * 0.5).abs() > 0.025
-            {
+            if moved(a, b) {
                 emit(ChangeKind::Move, uncertain);
             }
-            if (a.width - b.width).abs() > 0.025 || (a.height - b.height).abs() > 0.025 {
+            if resized(a, b) {
                 emit(ChangeKind::Resize, uncertain);
             }
             if matches!(

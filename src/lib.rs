@@ -16,11 +16,13 @@ mod ffi;
 mod gpu;
 mod markers;
 mod model;
+mod progress;
 mod tracker;
 pub(crate) mod vision;
 
 pub use markers::*;
 pub use model::*;
+pub use progress::{AnalysisProgress, ProgressState};
 
 use gpu::BackendSession;
 use tracker::Tracker;
@@ -35,6 +37,32 @@ pub struct Analyzer {
     tracker: Tracker,
     pub(crate) session: BackendSession,
     uncommitted: Option<Timestamp>,
+    /// Indices of observations committed by a coarse push, in order. The
+    /// caller skipped the frames between each one and its predecessor.
+    coarse: Vec<usize>,
+    /// The uncommitted frame was a coarse submission, so the frames before it
+    /// were skipped and never confirmed.
+    coarse_pending: bool,
+}
+
+/// A frame measured and detected ahead of its push. See [`Analyzer::prepare`].
+pub struct PreparedFrame {
+    timestamp: Timestamp,
+    display: DisplayGeometry,
+    measurements: vision::Measurements,
+    detection: vision::Detection,
+}
+
+/// Result of [`Analyzer::push_coarse`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CoarseOutcome {
+    /// Nothing tracked changed since the last committed frame. The frame is
+    /// committed and the skipped interval is reported as inferred.
+    Committed,
+    /// The frame differs from the last committed frame. The analyzer is
+    /// unchanged. Push the skipped frames, then this frame, with
+    /// [`Analyzer::push`].
+    Refine,
 }
 
 impl Analyzer {
@@ -73,6 +101,8 @@ impl Analyzer {
             tracker: Tracker::default(),
             session,
             uncommitted: None,
+            coarse: Vec::new(),
+            coarse_pending: false,
         })
     }
 
@@ -94,7 +124,98 @@ impl Analyzer {
     /// Measure and commit a single frame. Frames must arrive in increasing
     /// presentation order. An error leaves the last committed state intact.
     pub fn push(&mut self, frame: Frame<'_>) -> Result<(), AnalysisError> {
+        self.submit(frame, false).map(|_| ())
+    }
+
+    /// Submit a frame that follows frames the caller skipped, such as the
+    /// next keyframe of a long recording. The frame is committed only when
+    /// the tracker sees every region continue from the last committed frame:
+    /// the same appearances and identity state, no event, and geometry within
+    /// the tolerance of a move or resize. The skipped interval is then
+    /// reported as [`Coverage::Inferred`].
+    ///
+    /// Otherwise the analyzer is left exactly as it was and the call returns
+    /// [`CoarseOutcome::Refine`]. Push the skipped frames and then this frame
+    /// with [`Analyzer::push`]; the result equals one that never tried the
+    /// coarse step. A change that appears and fully reverts between two
+    /// committed frames is not observed, which the inferred coverage records.
+    ///
+    /// The first frame of a scan has no skipped predecessor and is committed
+    /// as a normal push. Timestamp rules and errors match [`Analyzer::push`].
+    pub fn push_coarse(&mut self, frame: Frame<'_>) -> Result<CoarseOutcome, AnalysisError> {
+        self.submit(frame, true)
+    }
+
+    /// Measure and detect a frame without changing the analyzer, so that
+    /// several frames can be prepared at once on different threads. Push the
+    /// results in presentation order with [`Analyzer::push_prepared`] or
+    /// [`Analyzer::push_coarse_prepared`]; the outcome equals pushing the
+    /// frames themselves. Preparation always measures on the CPU and fails
+    /// for an analyzer that measures on the GPU. Do not prepare while a push
+    /// is running on another thread.
+    pub fn prepare(&self, frame: &Frame<'_>) -> Result<PreparedFrame, AnalysisError> {
+        if self.session.backend() != Backend::Cpu {
+            return Err(error(
+                ErrorKind::InvalidFrame,
+                "frames can be prepared only for CPU measurement",
+                frame.timestamp,
+            ));
+        }
+        validate_frame(frame)?;
+        let measurements = vision::measure(frame);
+        let detection = self.detect(&measurements);
+        Ok(PreparedFrame {
+            timestamp: frame.timestamp,
+            display: frame.display,
+            measurements,
+            detection,
+        })
+    }
+
+    /// Commit a prepared frame. Timestamp rules match [`Analyzer::push`].
+    pub fn push_prepared(&mut self, prepared: PreparedFrame) -> Result<(), AnalysisError> {
+        self.admit(prepared.timestamp)?;
+        self.track(prepared, false);
+        Ok(())
+    }
+
+    /// Offer a prepared frame that follows skipped frames. See
+    /// [`Analyzer::push_coarse`].
+    pub fn push_coarse_prepared(
+        &mut self,
+        prepared: PreparedFrame,
+    ) -> Result<CoarseOutcome, AnalysisError> {
+        self.admit(prepared.timestamp)?;
+        Ok(self.track(prepared, true))
+    }
+
+    fn submit(&mut self, frame: Frame<'_>, coarse: bool) -> Result<CoarseOutcome, AnalysisError> {
         let timestamp = frame.timestamp;
+        self.admit(timestamp)?;
+        let coarse = coarse && !self.tracker.observations.is_empty();
+        let measurements = validate_frame(&frame)
+            .and_then(|()| self.session.measure(&frame))
+            .map_err(|mut error| {
+                // An equivalent clock can replay the frame. Keep the original
+                // source ticks as the resume point if that attempt also fails.
+                if self.uncommitted.is_none() {
+                    self.coarse_pending = coarse;
+                }
+                error.resume_at = *self.uncommitted.get_or_insert(timestamp);
+                error
+            })?;
+        let detection = self.detect(&measurements);
+        let prepared = PreparedFrame {
+            timestamp,
+            display: frame.display,
+            measurements,
+            detection,
+        };
+        Ok(self.track(prepared, coarse))
+    }
+
+    /// Check that a frame may follow the committed history.
+    fn admit(&self, timestamp: Timestamp) -> Result<(), AnalysisError> {
         if !timestamp.is_valid()
             || timestamp.before(self.start)
             || self
@@ -119,33 +240,59 @@ impl Analyzer {
                 uncommitted,
             ));
         }
-        let measurements = validate_frame(&frame)
-            .and_then(|()| self.session.measure(&frame))
-            .map_err(|mut error| {
-                // An equivalent clock can replay the frame. Keep the original
-                // source ticks as the resume point if that attempt also fails.
-                error.resume_at = *self.uncommitted.get_or_insert(timestamp);
-                error
-            })?;
+        Ok(())
+    }
+
+    /// The part of the analysis that reads only the frame.
+    fn detect(&self, measurements: &vision::Measurements) -> vision::Detection {
+        match self.layout {
+            FeedLayout::Meeting => vision::detect(measurements),
+            FeedLayout::Automatic => vision::detect_feeds(measurements),
+            FeedLayout::Grid { columns, rows } => vision::grid_feeds(measurements, columns, rows),
+        }
+    }
+
+    /// Associate a detected frame with the history and commit it, unless it
+    /// was offered in place of skipped frames and something changed.
+    fn track(&mut self, prepared: PreparedFrame, coarse: bool) -> CoarseOutcome {
+        let coarse = coarse && !self.tracker.observations.is_empty();
+        let PreparedFrame {
+            timestamp,
+            display,
+            measurements,
+            mut detection,
+        } = prepared;
+        // The tracker reads the timestamp and display geometry only.
+        let frame = Frame {
+            data: &[],
+            width: measurements.width,
+            height: measurements.height,
+            stride: 0,
+            format: PixelFormat::Gray8,
+            timestamp,
+            display,
+        };
+        let saved = coarse.then(|| self.tracker.checkpoint());
         let sparse = self.config.sampling == Sampling::Sparse;
         match self.layout {
             FeedLayout::Meeting => {
-                let mut detection = vision::detect(&measurements);
                 self.tracker
                     .verify_thumbnail_subdivision(&measurements, &mut detection);
                 self.tracker.push(&frame, detection, sparse);
             }
-            FeedLayout::Automatic => {
-                let detection = vision::detect_feeds(&measurements);
-                self.tracker.push(&frame, detection, sparse);
-            }
-            FeedLayout::Grid { columns, rows } => {
-                let detection = vision::grid_feeds(&measurements, columns, rows);
-                self.tracker.push_grid(&frame, detection, sparse);
-            }
+            FeedLayout::Automatic => self.tracker.push(&frame, detection, sparse),
+            FeedLayout::Grid { .. } => self.tracker.push_grid(&frame, detection, sparse),
         }
         self.uncommitted = None;
-        Ok(())
+        self.coarse_pending = false;
+        if let Some(saved) = saved {
+            if !self.tracker.continues(&saved) {
+                self.tracker.restore(saved);
+                return CoarseOutcome::Refine;
+            }
+            self.coarse.push(self.tracker.observations.len() - 1);
+        }
+        CoarseOutcome::Committed
     }
 
     /// Produce a versioned snapshot ending at the exclusive scan end. Following
@@ -169,20 +316,15 @@ impl Analyzer {
     /// # Ok(()) }
     /// ```
     pub fn snapshot(&self, end: Timestamp) -> Result<AnalysisSnapshot<'_>, AnalysisError> {
-        if !self.start.before(end)
-            || self
-                .tracker
+        progress::validate_scan_range(
+            self.start,
+            self.tracker
                 .observations
                 .last()
-                .is_some_and(|last| !last.timestamp.before(end))
-            || self.uncommitted.is_some_and(|point| end.before(point))
-        {
-            return Err(error(
-                ErrorKind::InvalidRange,
-                "scan end must be after the scan start and the last submitted frame",
-                self.uncommitted.unwrap_or(end),
-            ));
-        }
+                .map(|frame| frame.timestamp),
+            self.uncommitted,
+            end,
+        )?;
         let covered_end = self.uncommitted.unwrap_or(end);
         let mut coverage = Vec::new();
         let observations = &self.tracker.observations;
@@ -196,13 +338,22 @@ impl Analyzer {
         } else {
             append_coverage(&mut coverage, self.start, covered_end, Coverage::Incomplete);
         }
+        let mut coarse = self.coarse.iter().copied().peekable();
         for (index, observation) in observations.iter().enumerate() {
             let interval_end = observations
                 .get(index + 1)
                 .map_or(covered_end, |next| next.timestamp);
-            let status = if observation.confidence < MIN_LAYOUT_CONFIDENCE {
+            while coarse.next_if(|&committed| committed <= index).is_some() {}
+            let last = index + 1 == observations.len();
+            let status = if last && self.coarse_pending {
+                // A failed coarse frame confirmed nothing about the frames
+                // skipped before it.
+                Coverage::Incomplete
+            } else if observation.confidence < MIN_LAYOUT_CONFIDENCE {
                 Coverage::Unknown
-            } else if self.config.sampling == Sampling::Sparse {
+            } else if self.config.sampling == Sampling::Sparse
+                || coarse.peek() == Some(&(index + 1))
+            {
                 Coverage::Inferred
             } else {
                 Coverage::Observed
@@ -329,6 +480,313 @@ mod tests {
             time(-3000),
         )
         .unwrap()
+    }
+
+    #[test]
+    fn progress_tracks_committed_source_time_across_replay_and_snapshots() {
+        let mut analyzer = analyzer(Sampling::Sparse);
+        let end = Timestamp::new(1, 1, 30);
+        let ready = analyzer.progress(Some(end)).unwrap();
+        assert_eq!(
+            (ready.state, ready.percent, ready.frames_processed),
+            (ProgressState::Ready, Some(0), 0)
+        );
+        assert_eq!(analyzer.progress(None).unwrap().percent, None);
+        let pixels = gallery(false);
+        analyzer.push(frame(&pixels, -3000)).unwrap();
+        analyzer.push(frame(&[], 0)).unwrap_err();
+        let partial = analyzer.progress(Some(end)).unwrap();
+        assert_eq!(partial.state, ProgressState::NeedsReplay);
+        assert_eq!(partial.frames_processed, 1);
+        assert_eq!(partial.last_timestamp, Some(time(-3000)));
+        assert_eq!(analyzer.finish(end).unwrap().progress().unwrap(), partial);
+        analyzer.push(frame(&pixels, 0)).unwrap();
+        let middle = analyzer.progress(Some(end)).unwrap();
+        assert_eq!(
+            (middle.state, middle.percent, middle.frames_processed),
+            (ProgressState::Analyzing, Some(50), 2)
+        );
+        assert!(analyzer.progress(Some(time(0))).is_err());
+        let finished = analyzer.finish(end).unwrap().progress().unwrap();
+        assert_eq!(
+            (finished.state, finished.percent),
+            (ProgressState::Complete, Some(100))
+        );
+        assert_eq!(analyzer.progress(Some(end)).unwrap(), middle);
+    }
+
+    #[test]
+    fn progress_percentage_floors_exactly_on_mixed_source_clocks() {
+        let mut a = Analyzer::new(
+            AnalyzerConfig {
+                mode: BackendMode::CpuOnly,
+                ..Default::default()
+            },
+            Timestamp::new(0, 1, 30),
+        )
+        .unwrap();
+        let pixels = gallery(false);
+        for percent in 0..100 {
+            let timestamp = Timestamp::new(percent, 3, 100);
+            a.push(Frame {
+                timestamp,
+                ..frame(&pixels, 0)
+            })
+            .unwrap();
+            assert_eq!(
+                a.progress(Some(Timestamp::new(3, 1001, 1001)))
+                    .unwrap()
+                    .percent,
+                Some(percent as u8),
+                "timestamp {percent} / 100 of duration"
+            );
+        }
+
+        let max = u32::MAX;
+        let mut a = Analyzer::new(
+            AnalyzerConfig {
+                mode: BackendMode::CpuOnly,
+                ..Default::default()
+            },
+            Timestamp::new(i64::MIN, max, max),
+        )
+        .unwrap();
+        let end = Timestamp::new(i64::MAX - 1, max - 2, max - 2);
+        for (pts, expected) in [(-2, 49), (-1, 50)] {
+            a.push(Frame {
+                timestamp: Timestamp::new(pts, max - 1, max - 1),
+                ..frame(&pixels, 0)
+            })
+            .unwrap();
+            assert_eq!(a.progress(Some(end)).unwrap().percent, Some(expected));
+        }
+    }
+
+    #[test]
+    fn live_progress_checks_resume_against_requested_end() {
+        let mut a = analyzer(Sampling::EveryFrame);
+        a.push(frame(&gallery(false), -3000)).unwrap();
+        a.push(frame(&[], 3000)).unwrap_err();
+        let error = a.progress(Some(time(1000))).unwrap_err();
+        assert_eq!(error.kind, ErrorKind::InvalidRange);
+        assert_eq!(error.resume_at, time(3000));
+        let partial = a.progress(Some(time(3000))).unwrap();
+        assert_eq!(partial.state, ProgressState::NeedsReplay);
+        let mut result = a.finish(time(3000)).unwrap();
+        assert_eq!(result.progress().unwrap(), partial);
+        for invalid in [
+            time(4000),
+            time(-6000),
+            Timestamp::new(0, 1, 0),
+            time(-3000),
+        ] {
+            result.resume_at = Some(invalid);
+            assert_eq!(result.progress().unwrap_err().kind, ErrorKind::InvalidRange);
+        }
+    }
+
+    #[test]
+    fn coarse_push_commits_only_a_continuing_layout_and_marks_the_skip_inferred() {
+        let mut analyzer = analyzer(Sampling::EveryFrame);
+        let data = gallery(false);
+        // The first frame has no skipped predecessor.
+        assert_eq!(
+            analyzer.push_coarse(frame(&data, 0)).unwrap(),
+            CoarseOutcome::Committed
+        );
+        analyzer.push(frame(&data, 3000)).unwrap();
+        assert_eq!(
+            analyzer.push_coarse(frame(&data, 219_000)).unwrap(),
+            CoarseOutcome::Committed
+        );
+        analyzer.push(frame(&data, 222_000)).unwrap();
+        let result = analyzer.finish(time(225_000)).unwrap();
+        assert_eq!(result.observations.len(), 4);
+        assert_eq!(result.sampling, Sampling::EveryFrame);
+        assert_eq!(result.coverage_at(time(-1)), Some(Coverage::Incomplete));
+        assert_eq!(result.coverage_at(time(0)), Some(Coverage::Observed));
+        assert_eq!(result.coverage_at(time(3000)), Some(Coverage::Inferred));
+        assert_eq!(result.coverage_at(time(218_999)), Some(Coverage::Inferred));
+        assert_eq!(result.coverage_at(time(219_000)), Some(Coverage::Observed));
+        assert_eq!(result.coverage_at(time(224_999)), Some(Coverage::Observed));
+        assert!(result.events.is_empty());
+        assert_eq!(result.appearances.len(), 2);
+    }
+
+    #[test]
+    fn a_refused_coarse_push_leaves_no_trace_in_the_result() {
+        let before = gallery(false);
+        let after = gallery(true);
+        let black = vec![0; before.len()];
+        for changed in [&after, &black] {
+            let mut dense = analyzer(Sampling::EveryFrame);
+            let mut coarse = analyzer(Sampling::EveryFrame);
+            for analyzer in [&mut dense, &mut coarse] {
+                analyzer.push(frame(&before, 0)).unwrap();
+                analyzer.push(frame(&before, 3000)).unwrap();
+            }
+            // Refused twice, including a retry at a different skipped distance.
+            for pts in [9000, 12_000] {
+                assert_eq!(
+                    coarse.push_coarse(frame(changed, pts)).unwrap(),
+                    CoarseOutcome::Refine
+                );
+            }
+            for analyzer in [&mut dense, &mut coarse] {
+                analyzer.push(frame(&before, 6000)).unwrap();
+                analyzer.push(frame(changed, 9000)).unwrap();
+                analyzer.push(frame(changed, 12_000)).unwrap();
+            }
+            let json = |analyzer: &Analyzer| {
+                serde_json::to_vec(&analyzer.snapshot(time(15_000)).unwrap()).unwrap()
+            };
+            assert_eq!(json(&dense), json(&coarse));
+        }
+    }
+
+    #[test]
+    fn coarse_push_refuses_an_unreadable_layout_on_either_side() {
+        let mut analyzer = analyzer(Sampling::EveryFrame);
+        let data = gallery(false);
+        let black = vec![0; data.len()];
+        analyzer.push(frame(&black, 0)).unwrap();
+        for pixels in [&black, &data] {
+            assert_eq!(
+                analyzer.push_coarse(frame(pixels, 3000)).unwrap(),
+                CoarseOutcome::Refine
+            );
+        }
+        assert_eq!(analyzer.finish(time(3000)).unwrap().observations.len(), 1);
+    }
+
+    #[test]
+    fn a_failed_coarse_frame_leaves_the_skipped_interval_incomplete() {
+        let mut analyzer = analyzer(Sampling::EveryFrame);
+        let data = gallery(false);
+        analyzer.push(frame(&data, 0)).unwrap();
+        let failure = analyzer.push_coarse(frame(&[], 9000)).unwrap_err();
+        assert_eq!(failure.resume_at, time(9000));
+        let partial = analyzer.finish(time(12_000)).unwrap();
+        assert_eq!(partial.coverage_at(time(3000)), Some(Coverage::Incomplete));
+        assert_eq!(partial.resume_at, Some(time(9000)));
+        assert_eq!(
+            analyzer.push_coarse(frame(&data, 9000)).unwrap(),
+            CoarseOutcome::Committed
+        );
+        let result = analyzer.finish(time(12_000)).unwrap();
+        assert_eq!(result.coverage_at(time(3000)), Some(Coverage::Inferred));
+        assert_eq!(result.coverage_at(time(9000)), Some(Coverage::Observed));
+        assert_eq!(result.resume_at, None);
+    }
+
+    #[test]
+    fn a_frame_sampled_by_the_published_rule_measures_like_its_source() {
+        // TILETRAIL_SAMPLE_LIMIT in the C header documents this rule.
+        const LIMIT: usize = 256;
+        for (width, height) in [
+            (1920usize, 1080usize),
+            (1080, 1920),
+            (641, 359),
+            (300, 7),
+            (256, 144),
+        ] {
+            let stride = width * 3 + 5;
+            let data: Vec<u8> = (0..stride * height)
+                .map(|index| ((index * 31 + index / 13) % 253) as u8)
+                .collect();
+            let longest = width.max(height);
+            let scale = |size: usize| ((size * LIMIT + longest / 2) / longest).max(1);
+            let (columns, rows) = if longest <= LIMIT {
+                (width, height)
+            } else {
+                (scale(width), scale(height))
+            };
+            let mut sampled = Vec::with_capacity(columns * rows * 3);
+            for y in 0..rows {
+                let row = ((2 * y + 1) * height) / (2 * rows);
+                for x in 0..columns {
+                    let column = ((2 * x + 1) * width) / (2 * columns);
+                    let at = row * stride + column * 3;
+                    sampled.extend_from_slice(&data[at..at + 3]);
+                }
+            }
+            let source = Frame {
+                data: &data,
+                width: width as u32,
+                height: height as u32,
+                stride,
+                format: PixelFormat::Rgb24,
+                timestamp: time(0),
+                display: DisplayGeometry::default(),
+            };
+            let reduced = Frame {
+                data: &sampled,
+                width: columns as u32,
+                height: rows as u32,
+                stride: columns * 3,
+                ..source
+            };
+            assert_eq!(vision::measure(&source), vision::measure(&reduced));
+        }
+    }
+
+    #[test]
+    fn prepared_frames_commit_exactly_like_the_frames_themselves() {
+        let before = gallery(false);
+        let after = gallery(true);
+        let black = vec![0; before.len()];
+        let script: [(&[u8], i64, bool); 7] = [
+            (&before, 0, false),
+            (&before, 3000, false),
+            (&before, 90_000, true),
+            (&after, 180_000, true),
+            (&after, 93_000, false),
+            (&black, 96_000, false),
+            (&after, 180_000, true),
+        ];
+        for layout in [
+            FeedLayout::Meeting,
+            FeedLayout::Automatic,
+            FeedLayout::Grid {
+                columns: 2,
+                rows: 1,
+            },
+        ] {
+            let config = AnalyzerConfig {
+                mode: BackendMode::Auto,
+                sampling: Sampling::EveryFrame,
+            };
+            let mut direct = Analyzer::with_layout(config, time(-3000), layout).unwrap();
+            let mut ahead = Analyzer::with_layout(config, time(-3000), layout).unwrap();
+            for (pixels, pts, coarse) in script {
+                let prepared = ahead.prepare(&frame(pixels, pts)).unwrap();
+                let (left, right) = if coarse {
+                    (
+                        direct.push_coarse(frame(pixels, pts)).unwrap(),
+                        ahead.push_coarse_prepared(prepared).unwrap(),
+                    )
+                } else {
+                    direct.push(frame(pixels, pts)).unwrap();
+                    ahead.push_prepared(prepared).unwrap();
+                    (CoarseOutcome::Committed, CoarseOutcome::Committed)
+                };
+                assert_eq!(left, right, "{layout:?} at {pts}");
+            }
+            let json = |analyzer: &Analyzer| {
+                serde_json::to_vec(&analyzer.snapshot(time(183_000)).unwrap()).unwrap()
+            };
+            assert_eq!(json(&direct), json(&ahead), "{layout:?}");
+        }
+        let mut analyzer = analyzer(Sampling::EveryFrame);
+        assert!(analyzer.prepare(&frame(&[], 0)).is_err());
+        let late = analyzer.prepare(&frame(&before, 0)).unwrap();
+        analyzer.push(frame(&before, 3000)).unwrap();
+        assert_eq!(
+            analyzer.push_prepared(late).unwrap_err().kind,
+            ErrorKind::InvalidTimestamp
+        );
+        analyzer.session = BackendSession::fake_gpu(BackendMode::GpuRequired, time(-3000));
+        assert!(analyzer.prepare(&frame(&before, 6000)).is_err());
     }
 
     #[test]

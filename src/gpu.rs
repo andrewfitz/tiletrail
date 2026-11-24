@@ -29,9 +29,13 @@ impl BackendSession {
         let validated_target = cfg!(all(target_os = "macos", target_arch = "aarch64"));
         let (engine, reason) = match mode {
             BackendMode::CpuOnly => (Engine::Cpu, None),
-            BackendMode::Auto if !validated_target => (
+            // A measurement reads a fixed grid of point samples. The CPU does
+            // that in microseconds at any frame size. The GPU must upload the
+            // whole frame and read the grid back, which measured 5 to 20 times
+            // slower per frame for identical values.
+            BackendMode::Auto => (
                 Engine::Cpu,
-                Some("automatic GPU selection is only enabled on Apple Silicon macOS".into()),
+                Some("automatic selection measures on the CPU, which is faster than a GPU round trip".into()),
             ),
             _ => match open_gpu() {
                 Ok(engine) => (
@@ -139,6 +143,12 @@ impl BackendSession {
         &self.diagnostics
     }
 
+    /// Open the GPU under any mode, to exercise recovery from a lost device.
+    #[cfg(all(test, feature = "gpu"))]
+    fn gpu(mode: BackendMode, start: Timestamp) -> Self {
+        Self::with_engine(mode, start, open_gpu().unwrap(), None)
+    }
+
     #[cfg(test)]
     pub(crate) fn fake_gpu(mode: BackendMode, start: Timestamp) -> Self {
         Self::with_engine(mode, start, Engine::FakeGpu, None)
@@ -184,7 +194,10 @@ mod tests {
     #[test]
     fn metal_measurements_match_cpu_and_recover_from_device_destruction() {
         let start = Timestamp::new(-3, 1, 30000);
-        let mut gpu = BackendSession::new(BackendMode::Auto, start).unwrap();
+        let chosen = BackendSession::new(BackendMode::Auto, start).unwrap();
+        assert_eq!(chosen.backend(), Backend::Cpu);
+        assert!(chosen.diagnostics()[0].reason.is_some());
+        let mut gpu = BackendSession::gpu(BackendMode::Auto, start);
         assert_eq!(gpu.backend(), Backend::Gpu, "{:?}", gpu.diagnostics());
         for format in [
             PixelFormat::Gray8,
@@ -258,7 +271,7 @@ mod tests {
         };
         assert_eq!(required.measure(&later).err().unwrap().resume_at, next);
 
-        let mut readback = BackendSession::new(BackendMode::Auto, start).unwrap();
+        let mut readback = BackendSession::gpu(BackendMode::Auto, start);
         let Engine::Gpu(device) = &mut readback.engine else {
             unreachable!()
         };

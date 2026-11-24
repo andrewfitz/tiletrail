@@ -40,7 +40,7 @@ Rust consumers can use `feed_tracks()`, `feed_appearances()`, and the `feed_id()
 
 The frame buffer is borrowed for the call. Supply actual presentation timestamps, including the media origin, and the exclusive end of the last frame. Rectangle coordinates run from zero to one in display orientation, with the origin in the upper left. `visible_at` returns a sampled observation. Check `coverage_at` to distinguish observed, inferred, unknown and incomplete time.
 
-Enable the `gpu` Cargo feature for GPU-first analysis. The default analyzer configuration prefers Metal on Apple Silicon and recovers on the CPU if the GPU becomes unavailable. On other platforms automatic mode uses the CPU. A build without the feature omits wgpu. Both paths feed the same identity tracker. Call `analyzer.diagnostics()` to inspect the selected backend and transitions.
+Enable the `gpu` Cargo feature to make the Metal backend available. Automatic mode measures on the CPU: a measurement reads a fixed grid of point samples, which the CPU does faster than a GPU upload and readback at every frame size, with identical values. Request the GPU explicitly with `BackendMode::GpuRequired`. A build without the feature omits wgpu. Both paths feed the same identity tracker. Call `analyzer.diagnostics()` to inspect the selected backend and transitions.
 
 ## Interchange
 
@@ -67,3 +67,21 @@ The library is distributed under the [MIT license](LICENSE). The real recording 
 The [camera multiview validation](validation/feeds/README.md) measures automatic detection on moving footage, including a borderless quad, a camera swap and a compressed inset.
 
 The [0.1.0 verification report](validation/RELEASE.md) records the tested platforms, package checksums, held-out recording results and measured performance.
+
+### Reporting progress
+
+After pushing a frame, call `analyzer.progress(Some(exclusive_end))?` for its committed frame count, latest source timestamp, state and whole percentage. Supply the end in the recording’s source clock. With an unknown duration, pass `None` and use the count or timestamp. Progress queries take constant time and can be polled between pushes. A successful finished range reports 100 through `result.progress()?`. A frame that requires replay leaves progress at the last committed frame and reports `NeedsReplay`. Supply an end at or after the pending timestamp.
+
+C consumers can poll `tiletrail_analyzer_progress` when `TILETRAIL_HAS_PROGRESS` is defined. Pass a null end for unknown duration (`percent == -1`). The live analyzer stays available for further pushes after a snapshot. A consumer finishing a finite input can display 100 after receiving its successful snapshot with no resume point.
+
+### Skipping unchanged stretches
+
+A caller that can seek, such as one decoding only keyframes, can offer a later frame with `Analyzer::push_coarse` (`tiletrail_analyzer_push_coarse` in C, present when `TILETRAIL_HAS_COARSE_PUSH` is defined). TileTrail commits the frame only when every region continues from the last committed frame: the same appearances and identity state, no event, and bounds within the tolerance of a move or resize. The skipped interval is then reported as inferred coverage, also in every-frame mode.
+
+Otherwise the call returns `Refine` and leaves the analyzer exactly as it was. Push the skipped frames and then that frame with `push`. The result is the same as if the coarse call had never been made. A change that appears and fully reverts between two committed frames is not seen, so keep the skipped interval short.
+
+### Preparing frames on several threads
+
+`Analyzer::prepare` measures and detects a frame without changing the analyzer, so a caller can prepare many frames at once and then commit them in presentation order with `push_prepared` or `push_coarse_prepared`. The result equals pushing the frames themselves. Preparation measures on the CPU. In C, use `tiletrail_analyzer_prepare`, `tiletrail_analyzer_push_prepared` and `tiletrail_prepared_free` when `TILETRAIL_HAS_PREPARED_FRAMES` is defined. Do not prepare while another thread pushes to the same analyzer.
+
+A frame larger than `TILETRAIL_SAMPLE_LIMIT` (256) pixels on its longer side is point-sampled to that size before measurement. The header documents the rule. A caller that has already sampled a frame that way can submit the small frame, with the source’s rotation and pixel aspect, and gets the same result without handing over the full picture.

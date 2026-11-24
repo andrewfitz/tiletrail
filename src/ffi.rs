@@ -237,6 +237,55 @@ fn create_analyzer(
     })
 }
 
+/// Borrow a caller frame for the duration of one submission.
+///
+/// # Safety
+/// The frame must describe `len` readable bytes that outlive the result.
+unsafe fn borrow_frame<'a>(frame: &CFrame) -> Result<Frame<'a>, Failure> {
+    let format = match frame.format {
+        0 => PixelFormat::Gray8,
+        1 => PixelFormat::Rgb24,
+        2 => PixelFormat::Rgba8,
+        3 => PixelFormat::Bgra8,
+        _ => return Err(Failure::argument("unknown pixel format")),
+    };
+    let rotation = match frame.rotation {
+        0 => Rotation::R0,
+        90 => Rotation::R90,
+        180 => Rotation::R180,
+        270 => Rotation::R270,
+        _ => return Err(Failure::argument("unknown display rotation")),
+    };
+    let len = usize::try_from(frame.len)
+        .ok()
+        .filter(|len| *len <= isize::MAX as usize)
+        .ok_or_else(|| Failure::argument("buffer length exceeds addressable range"))?;
+    let stride = usize::try_from(frame.stride)
+        .map_err(|_| Failure::argument("row stride exceeds addressable range"))?;
+    let data = if len == 0 {
+        &[]
+    } else {
+        if frame.data.is_null() {
+            return Err(Failure::argument("missing pixel buffer"));
+        }
+        // SAFETY: The caller supplies len readable bytes, valid until return.
+        unsafe { slice::from_raw_parts(frame.data, len) }
+    };
+    Ok(Frame {
+        data,
+        width: frame.width,
+        height: frame.height,
+        stride,
+        format,
+        timestamp: frame.timestamp.into(),
+        display: DisplayGeometry {
+            rotation,
+            pixel_aspect_num: frame.pixel_aspect_num,
+            pixel_aspect_den: frame.pixel_aspect_den,
+        },
+    })
+}
+
 #[unsafe(no_mangle)]
 unsafe extern "C" fn tiletrail_analyzer_push(
     analyzer: *mut AnalyzerHandle,
@@ -251,51 +300,192 @@ unsafe extern "C" fn tiletrail_analyzer_push(
             return Err(Failure::panic());
         }
         let frame = unsafe { frame.as_ref() }.ok_or_else(|| Failure::argument("missing frame"))?;
-        let format = match frame.format {
-            0 => PixelFormat::Gray8,
-            1 => PixelFormat::Rgb24,
-            2 => PixelFormat::Rgba8,
-            3 => PixelFormat::Bgra8,
-            _ => return Err(Failure::argument("unknown pixel format")),
-        };
-        let rotation = match frame.rotation {
-            0 => Rotation::R0,
-            90 => Rotation::R90,
-            180 => Rotation::R180,
-            270 => Rotation::R270,
-            _ => return Err(Failure::argument("unknown display rotation")),
-        };
-        let len = usize::try_from(frame.len)
-            .ok()
-            .filter(|len| *len <= isize::MAX as usize)
-            .ok_or_else(|| Failure::argument("buffer length exceeds addressable range"))?;
-        let stride = usize::try_from(frame.stride)
-            .map_err(|_| Failure::argument("row stride exceeds addressable range"))?;
-        let data = if len == 0 {
-            &[]
-        } else {
-            if frame.data.is_null() {
-                return Err(Failure::argument("missing pixel buffer"));
-            }
-            // SAFETY: The caller supplies len readable bytes, valid until return.
-            unsafe { slice::from_raw_parts(frame.data, len) }
-        };
+        let frame = unsafe { borrow_frame(frame) }?;
         handle.panicked = true;
-        let result = handle.analyzer.push(Frame {
-            data,
-            width: frame.width,
-            height: frame.height,
-            stride,
-            format,
-            timestamp: frame.timestamp.into(),
-            display: DisplayGeometry {
-                rotation,
-                pixel_aspect_num: frame.pixel_aspect_num,
-                pixel_aspect_den: frame.pixel_aspect_den,
-            },
-        });
+        let result = handle.analyzer.push(frame);
         handle.panicked = false;
         result.map_err(Failure::from)
+    })
+}
+
+const COARSE_COMMITTED: u32 = 0;
+const COARSE_REFINE: u32 = 1;
+
+#[unsafe(no_mangle)]
+unsafe extern "C" fn tiletrail_analyzer_push_coarse(
+    analyzer: *mut AnalyzerHandle,
+    frame: *const CFrame,
+    outcome: *mut u32,
+    error: *mut CError,
+) -> i32 {
+    boundary(error, || {
+        if outcome.is_null() {
+            return Err(Failure::argument("missing coarse outcome"));
+        }
+        // A failed call must never read as a committed frame.
+        // SAFETY: The caller supplies writable, aligned outcome storage.
+        unsafe { outcome.write(COARSE_REFINE) };
+        // SAFETY: The caller guarantees serialized access and valid storage.
+        let handle =
+            unsafe { analyzer.as_mut() }.ok_or_else(|| Failure::argument("missing analyzer"))?;
+        if handle.panicked {
+            return Err(Failure::panic());
+        }
+        let frame = unsafe { frame.as_ref() }.ok_or_else(|| Failure::argument("missing frame"))?;
+        let frame = unsafe { borrow_frame(frame) }?;
+        handle.panicked = true;
+        let result = handle.analyzer.push_coarse(frame);
+        handle.panicked = false;
+        let committed = result? == crate::CoarseOutcome::Committed;
+        unsafe {
+            outcome.write(if committed {
+                COARSE_COMMITTED
+            } else {
+                COARSE_REFINE
+            })
+        };
+        Ok(())
+    })
+}
+
+#[unsafe(no_mangle)]
+unsafe extern "C" fn tiletrail_analyzer_prepare(
+    analyzer: *const AnalyzerHandle,
+    frame: *const CFrame,
+    out: *mut *mut crate::PreparedFrame,
+    error: *mut CError,
+) -> i32 {
+    boundary(error, || {
+        if out.is_null() {
+            return Err(Failure::argument("missing prepared output"));
+        }
+        // SAFETY: The caller supplies writable output storage.
+        unsafe { out.write(ptr::null_mut()) };
+        // SAFETY: No push runs during preparation, so shared access is sound.
+        let handle =
+            unsafe { analyzer.as_ref() }.ok_or_else(|| Failure::argument("missing analyzer"))?;
+        if handle.panicked {
+            return Err(Failure::panic());
+        }
+        let frame = unsafe { frame.as_ref() }.ok_or_else(|| Failure::argument("missing frame"))?;
+        let frame = unsafe { borrow_frame(frame) }?;
+        let prepared = handle.analyzer.prepare(&frame)?;
+        unsafe { out.write(Box::into_raw(Box::new(prepared))) };
+        Ok(())
+    })
+}
+
+#[unsafe(no_mangle)]
+unsafe extern "C" fn tiletrail_analyzer_push_prepared(
+    analyzer: *mut AnalyzerHandle,
+    prepared: *mut crate::PreparedFrame,
+    coarse: u32,
+    outcome: *mut u32,
+    error: *mut CError,
+) -> i32 {
+    boundary(error, || {
+        if !outcome.is_null() {
+            // A failed call must never read as a committed frame.
+            // SAFETY: The caller supplies writable, aligned outcome storage.
+            unsafe { outcome.write(COARSE_REFINE) };
+        }
+        if prepared.is_null() {
+            return Err(Failure::argument("missing prepared frame"));
+        }
+        // SAFETY: The caller transfers ownership of a live prepared frame.
+        let prepared = unsafe { Box::from_raw(prepared) };
+        if coarse != 0 && outcome.is_null() {
+            return Err(Failure::argument("missing coarse outcome"));
+        }
+        // SAFETY: The caller guarantees serialized access and valid storage.
+        let handle =
+            unsafe { analyzer.as_mut() }.ok_or_else(|| Failure::argument("missing analyzer"))?;
+        if handle.panicked {
+            return Err(Failure::panic());
+        }
+        handle.panicked = true;
+        let result = if coarse != 0 {
+            handle.analyzer.push_coarse_prepared(*prepared)
+        } else {
+            handle
+                .analyzer
+                .push_prepared(*prepared)
+                .map(|()| crate::CoarseOutcome::Committed)
+        };
+        handle.panicked = false;
+        let committed = result? == crate::CoarseOutcome::Committed;
+        if !outcome.is_null() {
+            unsafe {
+                outcome.write(if committed {
+                    COARSE_COMMITTED
+                } else {
+                    COARSE_REFINE
+                })
+            };
+        }
+        Ok(())
+    })
+}
+
+#[unsafe(no_mangle)]
+unsafe extern "C" fn tiletrail_prepared_free(prepared: *mut crate::PreparedFrame) {
+    if !prepared.is_null() {
+        // SAFETY: The caller transfers ownership of a live prepared frame.
+        catch(|| unsafe { drop(Box::from_raw(prepared)) });
+    }
+}
+
+#[repr(C)]
+#[derive(Default)]
+struct CProgress {
+    frames_processed: u64,
+    last_timestamp: CTime,
+    state: u32,
+    percent: i32,
+}
+
+#[unsafe(no_mangle)]
+unsafe extern "C" fn tiletrail_analyzer_progress(
+    analyzer: *const AnalyzerHandle,
+    expected_end: *const CTime,
+    out: *mut CProgress,
+    error: *mut CError,
+) -> i32 {
+    boundary(error, || {
+        if out.is_null() {
+            return Err(Failure::argument("missing progress output"));
+        }
+        // SAFETY: the caller supplies writable output and valid, aligned inputs.
+        unsafe {
+            out.write(CProgress {
+                percent: -1,
+                ..CProgress::default()
+            })
+        };
+        let handle =
+            unsafe { analyzer.as_ref() }.ok_or_else(|| Failure::argument("missing analyzer"))?;
+        if handle.panicked {
+            return Err(Failure::panic());
+        }
+        let end = unsafe { expected_end.as_ref() }
+            .copied()
+            .map(Timestamp::from);
+        let progress = handle.analyzer.progress(end)?;
+        let state = match progress.state {
+            crate::ProgressState::Ready => 0,
+            crate::ProgressState::Analyzing => 1,
+            crate::ProgressState::NeedsReplay => 2,
+            crate::ProgressState::Complete => 3,
+        };
+        unsafe {
+            out.write(CProgress {
+                frames_processed: progress.frames_processed as u64,
+                last_timestamp: progress.last_timestamp.map(CTime::from).unwrap_or_default(),
+                state,
+                percent: progress.percent.map(i32::from).unwrap_or(-1),
+            })
+        };
+        Ok(())
     })
 }
 
@@ -472,6 +662,162 @@ mod tests {
     }
 
     #[test]
+    fn c_progress_reports_pending_range_and_clears_output_on_error() {
+        let config = CConfig {
+            mode: 1,
+            sampling: 0,
+        };
+        let start = CTime::from(Timestamp::new(0, 1, 1));
+        let end = CTime::from(Timestamp::new(2, 1, 1));
+        let mut handle = ptr::null_mut();
+        let mut error = Failure::default().to_error();
+        let mut progress = CProgress::default();
+        let data = [1];
+        let mut frame = CFrame {
+            data: data.as_ptr(),
+            len: 1,
+            stride: 1,
+            width: 1,
+            height: 1,
+            format: 0,
+            rotation: 0,
+            pixel_aspect_num: 1,
+            pixel_aspect_den: 1,
+            timestamp: start,
+        };
+        unsafe {
+            assert_eq!(
+                tiletrail_analyzer_create(&config, start, &mut handle, &mut error),
+                0
+            );
+            assert_eq!(
+                tiletrail_analyzer_progress(handle, &end, &mut progress, &mut error),
+                0
+            );
+            assert_eq!(
+                (progress.frames_processed, progress.state, progress.percent),
+                (0, 0, 0)
+            );
+            assert_eq!(tiletrail_analyzer_push(handle, &frame, &mut error), 0);
+            frame.timestamp = CTime::from(Timestamp::new(3, 1, 1));
+            frame.len = 0;
+            assert_eq!(tiletrail_analyzer_push(handle, &frame, &mut error), 1);
+            assert_eq!(
+                tiletrail_analyzer_progress(handle, &frame.timestamp, &mut progress, &mut error),
+                0
+            );
+            assert_eq!(
+                (progress.frames_processed, progress.state, progress.percent),
+                (1, 2, 0)
+            );
+            assert_eq!(
+                tiletrail_analyzer_progress(handle, &end, &mut progress, &mut error),
+                3
+            );
+            assert_eq!((error.has_resume, error.resume_at.pts), (1, 3));
+            assert_eq!((progress.frames_processed, progress.percent), (0, -1));
+            assert_eq!(
+                tiletrail_analyzer_progress(handle, ptr::null(), &mut progress, &mut error),
+                0
+            );
+            assert_eq!(
+                (progress.frames_processed, progress.state, progress.percent),
+                (1, 2, -1)
+            );
+            tiletrail_analyzer_free(handle);
+        }
+    }
+
+    #[test]
+    fn coarse_push_reports_its_outcome_and_never_commits_on_failure() {
+        let config = CConfig {
+            mode: 1,
+            sampling: 0,
+        };
+        let start = CTime::from(Timestamp::new(0, 1, 30));
+        let mut analyzer = ptr::null_mut();
+        let mut error = Failure::default().to_error();
+        let data = [127u8];
+        let mut frame = CFrame {
+            data: data.as_ptr(),
+            len: 1,
+            stride: 1,
+            width: 1,
+            height: 1,
+            format: 0,
+            rotation: 0,
+            pixel_aspect_num: 1,
+            pixel_aspect_den: 1,
+            timestamp: start,
+        };
+        unsafe {
+            assert_eq!(
+                tiletrail_analyzer_create(&config, start, &mut analyzer, &mut error),
+                0
+            );
+            assert_eq!(
+                tiletrail_analyzer_push_coarse(analyzer, &frame, ptr::null_mut(), &mut error),
+                6
+            );
+            // The first frame follows nothing and is committed.
+            let mut outcome = u32::MAX;
+            assert_eq!(
+                tiletrail_analyzer_push_coarse(analyzer, &frame, &mut outcome, &mut error),
+                0
+            );
+            assert_eq!(outcome, COARSE_COMMITTED);
+            // A rejected frame reads as a refusal.
+            frame.timestamp = CTime::from(Timestamp::new(90, 1, 30));
+            frame.len = 0;
+            assert_eq!(
+                tiletrail_analyzer_push_coarse(analyzer, &frame, &mut outcome, &mut error),
+                1
+            );
+            assert_eq!(outcome, COARSE_REFINE);
+            // A prepared frame commits like the frame and is consumed either way.
+            frame.len = 1;
+            let mut prepared = ptr::null_mut();
+            assert_eq!(
+                tiletrail_analyzer_prepare(analyzer, &frame, &mut prepared, &mut error),
+                0
+            );
+            assert_eq!(
+                tiletrail_analyzer_push_prepared(analyzer, prepared, 1, &mut outcome, &mut error),
+                0
+            );
+            assert_eq!(outcome, COARSE_COMMITTED);
+            assert_eq!(
+                tiletrail_analyzer_prepare(analyzer, &frame, &mut prepared, &mut error),
+                0
+            );
+            assert_eq!(
+                tiletrail_analyzer_push_prepared(
+                    analyzer,
+                    prepared,
+                    0,
+                    ptr::null_mut(),
+                    &mut error
+                ),
+                2
+            );
+            assert_eq!(
+                tiletrail_analyzer_prepare(analyzer, &frame, &mut prepared, &mut error),
+                0
+            );
+            tiletrail_prepared_free(prepared);
+            tiletrail_prepared_free(ptr::null_mut());
+            let mut progress = CProgress::default();
+            let end = CTime::from(Timestamp::new(120, 1, 30));
+            assert_eq!(
+                tiletrail_analyzer_progress(analyzer, &end, &mut progress, &mut error),
+                0
+            );
+            assert_eq!(progress.frames_processed, 2);
+            tiletrail_analyzer_free(analyzer);
+        }
+    }
+
+    #[test]
     fn snapshots_survive_replay_and_analyzer_release() {
         let config = CConfig {
             mode: 1,
@@ -513,6 +859,20 @@ mod tests {
             assert_eq!(error.message[0], 0);
             frame.len = 1;
             assert_eq!(tiletrail_analyzer_push(analyzer, &frame, &mut error), 0);
+            let mut progress = CProgress::default();
+            assert_eq!(
+                tiletrail_analyzer_progress(analyzer, &end, &mut progress, &mut error),
+                0
+            );
+            assert_eq!(
+                (progress.frames_processed, progress.state, progress.percent),
+                (1, 1, 0)
+            );
+            assert_eq!(
+                tiletrail_analyzer_progress(analyzer, ptr::null(), &mut progress, &mut error),
+                0
+            );
+            assert_eq!(progress.percent, -1);
             drop(data);
             assert_eq!(
                 tiletrail_analyzer_result_json(analyzer, end, &mut complete, &mut error),

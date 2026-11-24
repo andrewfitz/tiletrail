@@ -9,6 +9,16 @@ extern "C" {
 
 #define TILETRAIL_ABI_VERSION 1u
 #define TILETRAIL_HAS_FEED_LAYOUTS 1
+#define TILETRAIL_HAS_PROGRESS 1
+#define TILETRAIL_HAS_COARSE_PUSH 1
+#define TILETRAIL_HAS_PREPARED_FRAMES 1
+/* Frames whose longer side is at most this many pixels are measured pixel for
+ * pixel. A larger frame is point-sampled to that size: its longer side becomes
+ * the limit, the other side scales to match rounded to nearest (at least one),
+ * and output pixel i of n reads source pixel ((2 * i + 1) * source) / (2 * n).
+ * A caller may submit a frame it has already sampled this way, with the
+ * source's rotation and pixel aspect, and obtains the same result. */
+#define TILETRAIL_SAMPLE_LIMIT 256u
 #define TILETRAIL_FEED_DETECTOR_REVISION 2u
 
 typedef struct tiletrail_analyzer tiletrail_analyzer_t;
@@ -108,12 +118,74 @@ int32_t tiletrail_analyzer_create_feeds(const tiletrail_config_t *config,
                                        tiletrail_analyzer_t **out,
                                        tiletrail_error_t *error);
 
+/* Constant-time progress of committed input. Expected end is an optional
+ * exclusive source timestamp. Percent is -1 when the duration is unknown.
+ * A live scan reports 0..99; a successful complete result is the terminal step.
+ * State is READY before the first frame, ANALYZING after a successful push,
+ * or NEEDS_REPLAY if a frame must be resubmitted. The end may equal the
+ * pending frame, or follow it. Failure clears the output and sets percent
+ * to -1. The last_timestamp field is meaningful when frames_processed > 0. */
+enum { TILETRAIL_PROGRESS_READY = 0, TILETRAIL_PROGRESS_ANALYZING = 1,
+       TILETRAIL_PROGRESS_NEEDS_REPLAY = 2, TILETRAIL_PROGRESS_COMPLETE = 3 };
+typedef struct {
+    uint64_t frames_processed;
+    tiletrail_timestamp_t last_timestamp; /* valid when frames_processed > 0 */
+    uint32_t state;
+    int32_t percent;
+} tiletrail_progress_t;
+int32_t tiletrail_analyzer_progress(const tiletrail_analyzer_t *analyzer,
+                                   const tiletrail_timestamp_t *expected_end,
+                                   tiletrail_progress_t *out, tiletrail_error_t *error);
+
 /* Borrow the frame and its len readable bytes only until this call returns.
  * Rotation is clockwise in degrees (0, 90, 180, 270).
  */
 int32_t tiletrail_analyzer_push(tiletrail_analyzer_t *analyzer,
                                const tiletrail_frame_t *frame,
                                tiletrail_error_t *error);
+
+/* Submit a frame that follows frames the caller skipped, typically the next
+ * keyframe. The frame is committed only when every tracked region continues
+ * from the last committed frame: the same appearances and identity state, no
+ * event, and geometry within the tolerance of a move or resize event. The
+ * result then reports the skipped interval as inferred coverage.
+ *
+ * TILETRAIL_COARSE_REFINE leaves the analyzer exactly as it was. Push the
+ * skipped frames and then this frame with tiletrail_analyzer_push. A change
+ * that appears and fully reverts between two committed frames is not seen.
+ * The first frame of a scan is committed as a normal push. Frame, timestamp
+ * and error rules match tiletrail_analyzer_push. Failure sets *outcome to
+ * TILETRAIL_COARSE_REFINE.
+ */
+enum { TILETRAIL_COARSE_COMMITTED = 0, TILETRAIL_COARSE_REFINE = 1 };
+int32_t tiletrail_analyzer_push_coarse(tiletrail_analyzer_t *analyzer,
+                                      const tiletrail_frame_t *frame,
+                                      uint32_t *outcome,
+                                      tiletrail_error_t *error);
+
+/* Measure and detect a frame ahead of its push, without changing the
+ * analyzer. Several threads may prepare frames of one analyzer at the same
+ * time, but not while another thread pushes to it. Preparation measures on
+ * the CPU and fails for an analyzer that measures on the GPU. Failure sets
+ * *out to NULL; submit that frame with tiletrail_analyzer_push instead.
+ *
+ * tiletrail_analyzer_push_prepared commits prepared frames in presentation
+ * order with the result of pushing the frames themselves. A nonzero coarse
+ * offers the frame as tiletrail_analyzer_push_coarse does and requires
+ * outcome; otherwise outcome may be NULL. The call always consumes prepared.
+ * Release a prepared frame that is never pushed with tiletrail_prepared_free,
+ * which accepts NULL.
+ */
+typedef struct tiletrail_prepared tiletrail_prepared_t;
+int32_t tiletrail_analyzer_prepare(const tiletrail_analyzer_t *analyzer,
+                                  const tiletrail_frame_t *frame,
+                                  tiletrail_prepared_t **out,
+                                  tiletrail_error_t *error);
+int32_t tiletrail_analyzer_push_prepared(tiletrail_analyzer_t *analyzer,
+                                        tiletrail_prepared_t *prepared,
+                                        uint32_t coarse, uint32_t *outcome,
+                                        tiletrail_error_t *error);
+void tiletrail_prepared_free(tiletrail_prepared_t *prepared);
 
 /* Write an independently owned UTF-8 JSON snapshot, with no trailing NUL.
  * The end timestamp is exclusive. Further pushes are permitted afterwards.
