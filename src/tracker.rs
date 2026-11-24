@@ -38,6 +38,7 @@ pub(crate) struct Tracker {
     dormant: BTreeMap<ParticipantId, Sample>,
     uncertain_gap: bool,
     has_baseline: bool,
+    steady: BTreeMap<AppearanceId, evidence::Steadiness>,
 }
 
 /// Everything a push can change apart from appending one observation.
@@ -50,6 +51,7 @@ pub(crate) struct Checkpoint {
     dormant: BTreeMap<ParticipantId, Sample>,
     uncertain_gap: bool,
     has_baseline: bool,
+    steady: BTreeMap<AppearanceId, evidence::Steadiness>,
 }
 
 fn moved(a: Rect, b: Rect) -> bool {
@@ -83,6 +85,18 @@ fn same_region(prior: &RegionObservation, region: &RegionObservation) -> bool {
 }
 
 impl Tracker {
+    /// A tracker with the same live state and no history, for trying one
+    /// detection without consuming it.
+    #[cfg(test)]
+    fn clone_steady_for_test(&self) -> Tracker {
+        Tracker {
+            active: self.active.clone(),
+            dormant: self.dormant.clone(),
+            steady: self.steady.clone(),
+            ..Tracker::default()
+        }
+    }
+
     pub(crate) fn checkpoint(&self) -> Checkpoint {
         Checkpoint {
             observations: self.observations.len(),
@@ -93,6 +107,7 @@ impl Tracker {
             dormant: self.dormant.clone(),
             uncertain_gap: self.uncertain_gap,
             has_baseline: self.has_baseline,
+            steady: self.steady.clone(),
         }
     }
 
@@ -106,6 +121,7 @@ impl Tracker {
         self.dormant = saved.dormant;
         self.uncertain_gap = saved.uncertain_gap;
         self.has_baseline = saved.has_baseline;
+        self.steady = saved.steady;
     }
 
     /// Report whether the single push after the checkpoint left every region
@@ -1302,6 +1318,117 @@ mod tests {
             tracker.verify_thumbnail_subdivision(&current, &mut proposed);
             assert_eq!(proposed.tiles.len(), if changed { 5 } else { 3 });
         }
+    }
+
+    #[test]
+    fn established_tiles_survive_a_brief_cut_or_merge_while_their_pictures_stay() {
+        let image = |replaced: bool| {
+            let mut pixels = Vec::new();
+            for y in 0..120usize {
+                for x in 0..160usize {
+                    let light = if (x / 20 + y / 20) % 2 == 0 { 0 } else { 65 };
+                    let rgb = [60 + light, 30 + light, (y / 40) * 36 + light].map(|v| v as u8);
+                    // The right half becomes two unrelated pictures.
+                    pixels.push(if replaced && x >= 80 {
+                        if x < 120 {
+                            [200, 40, 40]
+                        } else {
+                            rgb.map(|v| 255 - v)
+                        }
+                    } else {
+                        rgb
+                    });
+                }
+            }
+            vision::Measurements {
+                width: 160,
+                height: 120,
+                pixels,
+                rotation: Rotation::R0,
+            }
+        };
+        let crop = |x: f32, width: f32, image: &vision::Measurements| {
+            let mut t = tile(x, 0.0, width, 0.0);
+            t.rect.height = 1.0;
+            vision::reobserve(image, &t).unwrap()
+        };
+        let before = image(false);
+        let halves = || vec![crop(0.0, 0.5, &before), crop(0.5, 0.5, &before)];
+        let cut = |image: &vision::Measurements| Detection {
+            tiles: vec![
+                crop(0.0, 0.5, image),
+                crop(0.5, 0.2, image),
+                crop(0.7, 0.3, image),
+            ],
+            confidence: 1.0,
+        };
+        let merged = |image: &vision::Measurements| Detection {
+            tiles: vec![crop(0.0, 1.0, image)],
+            confidence: 1.0,
+        };
+        let at = |pts: i64| Timestamp::new(pts, 1, 30);
+        let mut tracker = Tracker::default();
+        let mut pts = 0;
+        let mut settle = |tracker: &mut Tracker, pushes: usize| {
+            for _ in 0..pushes {
+                let mut detection = Detection {
+                    tiles: halves(),
+                    confidence: 1.0,
+                };
+                tracker.hold_established_tiles(&before, &mut detection, at(pts));
+                assert_eq!(detection.tiles.len(), 2);
+                push(tracker, pts, detection.tiles);
+                pts += 1;
+            }
+        };
+
+        // A layout seen only briefly earns no protection.
+        settle(&mut tracker, 3);
+        let mut early = cut(&before);
+        tracker.hold_established_tiles(&before, &mut early, at(100));
+        assert_eq!(early.tiles.len(), 3);
+
+        let mut tracker = Tracker::default();
+        settle(&mut tracker, 10);
+        for replaced in [false, true] {
+            let current = image(replaced);
+            let mut proposed = cut(&current);
+            tracker.clone_steady_for_test().hold_established_tiles(
+                &current,
+                &mut proposed,
+                at(100),
+            );
+            assert_eq!(proposed.tiles.len(), if replaced { 3 } else { 2 });
+            let mut proposed = merged(&current);
+            tracker.clone_steady_for_test().hold_established_tiles(
+                &current,
+                &mut proposed,
+                at(100),
+            );
+            assert_eq!(proposed.tiles.len(), if replaced { 1 } else { 2 });
+        }
+        // A tile that is merely trimmed stays as detected.
+        let mut trimmed = Detection {
+            tiles: vec![crop(0.0, 0.5, &before), crop(0.52, 0.48, &before)],
+            confidence: 1.0,
+        };
+        tracker
+            .clone_steady_for_test()
+            .hold_established_tiles(&before, &mut trimmed, at(100));
+        assert_eq!(trimmed.tiles[1].rect, crop(0.52, 0.48, &before).rect);
+
+        // The hold ends after three seconds, so a wrong tile cannot persist.
+        let mut released = None;
+        for held in 0..200 {
+            let mut proposed = cut(&before);
+            tracker.hold_established_tiles(&before, &mut proposed, at(pts + held));
+            if proposed.tiles.len() == 3 {
+                released = Some(held);
+                break;
+            }
+            push(&mut tracker, pts + held, proposed.tiles);
+        }
+        assert_eq!(released, Some(91));
     }
 
     #[test]

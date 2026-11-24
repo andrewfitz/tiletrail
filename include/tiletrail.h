@@ -20,6 +20,10 @@ extern "C" {
  * source's rotation and pixel aspect, and obtains the same result. */
 #define TILETRAIL_SAMPLE_LIMIT 256u
 #define TILETRAIL_FEED_DETECTOR_REVISION 2u
+/* Changes whenever meeting analysis can return different regions or
+ * identities for the same frames. Absent before revision 2, which holds
+ * established video tiles through brief cuts and merges by the detector. */
+#define TILETRAIL_MEETING_DETECTOR_REVISION 2u
 
 typedef struct tiletrail_analyzer tiletrail_analyzer_t;
 

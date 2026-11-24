@@ -102,6 +102,191 @@ impl Tracker {
     }
 }
 
+/// A tile earns protection once the detector has returned it this many pushes
+/// in a row, and keeps it for at most this many seconds of source time
+/// without the detector returning it again.
+const ESTABLISHED: u32 = 8;
+const HOLD_SECONDS: i128 = 3;
+
+/// How long the detector has returned an appearance's tile, and since when
+/// the tracker has held it against the detector.
+#[derive(Clone, Copy, Default)]
+pub(crate) struct Steadiness {
+    detected: u32,
+    held_since: Option<Timestamp>,
+}
+
+/// The hold that began at `since` may still cover a frame at `now`.
+fn within_hold(since: Timestamp, now: Timestamp) -> bool {
+    since.common_clock(now).is_some_and(|(start, end)| {
+        end - start
+            <= HOLD_SECONDS
+                * i128::from(since.time_base.denominator)
+                * i128::from(now.time_base.denominator)
+    })
+}
+
+impl Tracker {
+    /// Hold established video tiles through detections that briefly cut one
+    /// of them into pieces or merge several into one, while the pictures in
+    /// their old bounds are still there.
+    ///
+    /// A dark band or a straight edge in someone's room can read as a gutter
+    /// for a few frames and follows whatever moves; a flat moment can hide
+    /// the gutters between tiles. A real change of layout replaces the
+    /// pictures, so the old bounds no longer match what they showed. Only a
+    /// tile the detector returned for several pushes in a row is held, and
+    /// only for a few seconds, so a tile that was wrong to begin with cannot
+    /// keep itself alive.
+    pub(crate) fn hold_established_tiles(
+        &mut self,
+        image: &vision::Measurements,
+        detection: &mut Detection,
+        timestamp: Timestamp,
+    ) {
+        if self.active.is_empty() || detection.confidence < MIN_LAYOUT_CONFIDENCE {
+            self.steady.clear();
+            return;
+        }
+        let steady = &self.steady;
+        let established = |sample: &Sample| {
+            sample.tile.kind == TileKind::Video
+                && spatial_contrast(&sample.tile) >= 0.025
+                && steady.get(&sample.appearance).is_some_and(|state| {
+                    state.detected >= ESTABLISHED
+                        && state
+                            .held_since
+                            .is_none_or(|since| within_hold(since, timestamp))
+                })
+        };
+        let unchanged = |prior: &Tile| {
+            vision::reobserve(image, prior).filter(|now| {
+                now.kind == prior.kind
+                    && (appearance_distance(&prior.descriptor, &now.descriptor) <= 0.06
+                        || matching_interior(&prior.descriptor, &now.descriptor))
+            })
+        };
+        let mut cut = vec![false; detection.tiles.len()];
+        let mut held = vec![false; self.active.len()];
+        let mut restored = Vec::new();
+
+        // One established tile cut into pieces that together fill its bounds.
+        for (index, sample) in self.active.iter().enumerate() {
+            let prior = &sample.tile;
+            if !established(sample) {
+                continue;
+            }
+            let pieces: Vec<usize> = (0..detection.tiles.len())
+                .filter(|&piece| !cut[piece] && within(detection.tiles[piece].rect, prior.rect))
+                .collect();
+            let tiles: Vec<&Tile> = pieces
+                .iter()
+                .map(|&piece| &detection.tiles[piece])
+                .collect();
+            if tiles.len() < 2
+                || envelope(&tiles).overlap(prior.rect) < 0.95
+                || tiles
+                    .iter()
+                    .any(|tile| tile.rect.overlap(prior.rect) >= 0.80)
+            {
+                continue;
+            }
+            let Some(now) = unchanged(prior) else {
+                continue;
+            };
+            for piece in pieces {
+                cut[piece] = true;
+            }
+            held[index] = true;
+            restored.push(now);
+        }
+
+        // Several established tiles merged into one that spans them. Each of
+        // them must still show its own picture.
+        for (merged, tile) in detection.tiles.iter().enumerate() {
+            if cut[merged] {
+                continue;
+            }
+            let span = tile.rect;
+            let members: Vec<usize> = (0..self.active.len())
+                .filter(|&index| !held[index] && within(self.active[index].tile.rect, span))
+                .collect();
+            let tiles: Vec<&Tile> = members
+                .iter()
+                .map(|&index| &self.active[index].tile)
+                .collect();
+            if tiles.len() < 2
+                || envelope(&tiles).overlap(span) < 0.95
+                || tiles.iter().any(|tile| tile.rect.overlap(span) >= 0.80)
+                || !members
+                    .iter()
+                    .all(|&index| established(&self.active[index]))
+            {
+                continue;
+            }
+            let Some(now): Option<Vec<Tile>> = tiles.iter().map(|tile| unchanged(tile)).collect()
+            else {
+                continue;
+            };
+            cut[merged] = true;
+            for index in members {
+                held[index] = true;
+            }
+            restored.extend(now);
+        }
+
+        // Count what the detector itself returned before changing its answer.
+        let mut steady = BTreeMap::new();
+        for (index, sample) in self.active.iter().enumerate() {
+            let mut state = self
+                .steady
+                .get(&sample.appearance)
+                .copied()
+                .unwrap_or_default();
+            if held[index] {
+                state.held_since.get_or_insert(timestamp);
+            } else if detection
+                .tiles
+                .iter()
+                .any(|tile| tile.rect.overlap(sample.tile.rect) >= 0.80)
+            {
+                state.detected += 1;
+                state.held_since = None;
+            } else {
+                continue;
+            }
+            steady.insert(sample.appearance, state);
+        }
+        self.steady = steady;
+
+        if restored.is_empty() {
+            return;
+        }
+        let mut index = 0;
+        detection.tiles.retain(|_| {
+            index += 1;
+            !cut[index - 1]
+        });
+        detection.tiles.extend(restored);
+        detection.tiles.sort_by(|a, b| {
+            a.rect
+                .y
+                .total_cmp(&b.rect.y)
+                .then_with(|| a.rect.x.total_cmp(&b.rect.x))
+        });
+    }
+}
+
+/// The share of a rectangle that lies inside another is nearly all of it.
+fn within(inner: Rect, outer: Rect) -> bool {
+    let width =
+        ((inner.x + inner.width).min(outer.x + outer.width) - inner.x.max(outer.x)).max(0.0);
+    let height =
+        ((inner.y + inner.height).min(outer.y + outer.height) - inner.y.max(outer.y)).max(0.0);
+    let area = inner.width * inner.height;
+    area > 0.0 && width * height >= 0.95 * area
+}
+
 fn envelope(tiles: &[&Tile]) -> Rect {
     let mut left = 1.0f32;
     let mut top = 1.0f32;

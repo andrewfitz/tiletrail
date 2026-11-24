@@ -278,6 +278,8 @@ impl Analyzer {
             FeedLayout::Meeting => {
                 self.tracker
                     .verify_thumbnail_subdivision(&measurements, &mut detection);
+                self.tracker
+                    .hold_established_tiles(&measurements, &mut detection, timestamp);
                 self.tracker.push(&frame, detection, sparse);
             }
             FeedLayout::Automatic => self.tracker.push(&frame, detection, sparse),
