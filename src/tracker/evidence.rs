@@ -110,7 +110,7 @@ const HOLD_SECONDS: i128 = 3;
 
 /// How long the detector has returned an appearance's tile, and since when
 /// the tracker has held it against the detector.
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Default, serde::Serialize, serde::Deserialize)]
 pub(crate) struct Steadiness {
     detected: u32,
     held_since: Option<Timestamp>,

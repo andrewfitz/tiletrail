@@ -25,3 +25,4 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 wgpu = { version = "24", default-features = false, features = ["metal", "wgsl"], optional = true }
 pollster = { version = "0.4", optional = true }
+sha2 = "0.10.9"

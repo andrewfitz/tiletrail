@@ -200,6 +200,24 @@ unsafe extern "C" fn tiletrail_analyzer_create_feeds(
     create_analyzer(config, start, layout, out, error)
 }
 
+#[unsafe(no_mangle)]
+unsafe extern "C" fn tiletrail_analyzer_create_gallery(
+    config: *const CConfig,
+    start: CTime,
+    columns: u32,
+    rows: u32,
+    out: *mut *mut AnalyzerHandle,
+    error: *mut CError,
+) -> i32 {
+    create_analyzer(
+        config,
+        start,
+        FeedLayout::Gallery { columns, rows },
+        out,
+        error,
+    )
+}
+
 fn create_analyzer(
     config: *const CConfig,
     start: CTime,
@@ -510,6 +528,178 @@ unsafe extern "C" fn tiletrail_analyzer_result_json(
         let result = handle.analyzer.snapshot(end.into())?;
         // SAFETY: out points to writable storage exclusively borrowed for the call.
         unsafe { write_json(out, &result) }
+    })
+}
+
+type CWrite = unsafe extern "C" fn(*mut std::ffi::c_void, *const u8, usize) -> i32;
+type CRead = unsafe extern "C" fn(*mut std::ffi::c_void, *mut u8, usize) -> isize;
+type CResultChunk = unsafe extern "C" fn(*mut std::ffi::c_void, u32, *const u8, usize) -> i32;
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+struct CCursor {
+    observations: usize,
+    events: usize,
+    coarse: usize,
+}
+
+impl From<crate::journal::Cursor> for CCursor {
+    fn from(cursor: crate::journal::Cursor) -> Self {
+        Self {
+            observations: cursor.observations,
+            events: cursor.events,
+            coarse: cursor.coarse,
+        }
+    }
+}
+
+fn io_failure(error: impl std::fmt::Display) -> Failure {
+    Failure {
+        code: 8,
+        message: error.to_string(),
+        ..Failure::default()
+    }
+}
+
+#[unsafe(no_mangle)]
+unsafe extern "C" fn tiletrail_analyzer_checkpoint_write(
+    analyzer: *const AnalyzerHandle,
+    cursor: *mut CCursor,
+    write: Option<CWrite>,
+    context: *mut std::ffi::c_void,
+    error: *mut CError,
+) -> i32 {
+    use std::io::{self, Write};
+    struct Writer(CWrite, *mut std::ffi::c_void);
+    impl Write for Writer {
+        fn write(&mut self, data: &[u8]) -> io::Result<usize> {
+            if unsafe { (self.0)(self.1, data.as_ptr(), data.len()) } != 0 {
+                return Err(io::Error::other("checkpoint write failed"));
+            }
+            Ok(data.len())
+        }
+        fn flush(&mut self) -> io::Result<()> {
+            Ok(())
+        }
+    }
+    boundary(error, || {
+        let handle =
+            unsafe { analyzer.as_ref() }.ok_or_else(|| Failure::argument("missing analyzer"))?;
+        let cursor = unsafe { cursor.as_mut() }
+            .ok_or_else(|| Failure::argument("missing checkpoint cursor"))?;
+        let write = write.ok_or_else(|| Failure::argument("missing checkpoint writer"))?;
+        if handle.panicked {
+            return Err(Failure::panic());
+        }
+        let previous = crate::journal::Cursor {
+            observations: cursor.observations,
+            events: cursor.events,
+            coarse: cursor.coarse,
+        };
+        let mut writer = io::BufWriter::with_capacity(64 * 1024, Writer(write, context));
+        handle
+            .analyzer
+            .write_checkpoint(previous, &mut writer)
+            .map_err(io_failure)?;
+        writer.flush().map_err(io_failure)?;
+        *cursor = handle.analyzer.journal_cursor().into();
+        Ok(())
+    })
+}
+
+#[unsafe(no_mangle)]
+unsafe extern "C" fn tiletrail_analyzer_checkpoint_read(
+    analyzer: *mut AnalyzerHandle,
+    cursor: *mut CCursor,
+    read: Option<CRead>,
+    context: *mut std::ffi::c_void,
+    error: *mut CError,
+) -> i32 {
+    use std::io::{self, Read};
+    struct Reader(CRead, *mut std::ffi::c_void);
+    impl Read for Reader {
+        fn read(&mut self, data: &mut [u8]) -> io::Result<usize> {
+            let count = unsafe { (self.0)(self.1, data.as_mut_ptr(), data.len()) };
+            usize::try_from(count)
+                .ok()
+                .filter(|&count| count <= data.len())
+                .ok_or_else(|| io::Error::other("checkpoint read failed"))
+        }
+    }
+    boundary(error, || {
+        let handle =
+            unsafe { analyzer.as_mut() }.ok_or_else(|| Failure::argument("missing analyzer"))?;
+        let cursor = unsafe { cursor.as_mut() }
+            .ok_or_else(|| Failure::argument("missing checkpoint cursor"))?;
+        let read = read.ok_or_else(|| Failure::argument("missing checkpoint reader"))?;
+        if handle.panicked {
+            return Err(Failure::panic());
+        }
+        let reader = io::BufReader::with_capacity(64 * 1024, Reader(read, context));
+        handle
+            .analyzer
+            .read_checkpoint(reader)
+            .map_err(io_failure)?;
+        *cursor = handle.analyzer.journal_cursor().into();
+        Ok(())
+    })
+}
+
+#[unsafe(no_mangle)]
+unsafe extern "C" fn tiletrail_analyzer_result_chunks(
+    analyzer: *const AnalyzerHandle,
+    end: CTime,
+    chunk: Option<CResultChunk>,
+    context: *mut std::ffi::c_void,
+    error: *mut CError,
+) -> i32 {
+    boundary(error, || {
+        let handle =
+            unsafe { analyzer.as_ref() }.ok_or_else(|| Failure::argument("missing analyzer"))?;
+        let chunk = chunk.ok_or_else(|| Failure::argument("missing result callback"))?;
+        if handle.panicked {
+            return Err(Failure::panic());
+        }
+        let result = handle.analyzer.snapshot(end.into())?;
+        let header = crate::AnalysisSnapshot {
+            observations: &[],
+            tracks: &[],
+            appearances: Vec::new(),
+            events: &[],
+            coverage: Vec::new(),
+            diagnostics: &[],
+            ..result
+        };
+        fn emit(
+            callback: CResultChunk,
+            context: *mut std::ffi::c_void,
+            kind: u32,
+            data: &impl serde::Serialize,
+            buffer: &mut Vec<u8>,
+        ) -> Result<(), Failure> {
+            buffer.clear();
+            serde_json::to_writer(&mut *buffer, data).map_err(io_failure)?;
+            if unsafe { callback(context, kind, buffer.as_ptr(), buffer.len()) } != 0 {
+                return Err(io_failure("result callback stopped"));
+            }
+            Ok(())
+        }
+        let mut buffer = Vec::new();
+        emit(chunk, context, 0, &header, &mut buffer)?;
+        macro_rules! rows {
+            ($kind:literal, $field:ident) => {
+                for batch in result.$field.chunks(32) {
+                    emit(chunk, context, $kind, &batch, &mut buffer)?;
+                }
+            };
+        }
+        rows!(1, observations);
+        rows!(2, tracks);
+        rows!(3, appearances);
+        rows!(4, events);
+        rows!(5, coverage);
+        rows!(6, diagnostics);
+        Ok(())
     })
 }
 

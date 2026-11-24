@@ -53,14 +53,7 @@ fn spans(
     spans[best].to_vec()
 }
 
-pub(super) fn recover(
-    image: &Measurements,
-    frame: Bounds,
-    regions: &[(Bounds, f32, bool)],
-) -> Option<Vec<Bounds>> {
-    if regions.len() < 8 {
-        return None;
-    }
+fn neutral_matte(image: &Measurements, frame: Bounds) -> [u8; 3] {
     let mut colors = [0usize; 12];
     for y in (frame.top..frame.bottom).step_by(4) {
         for x in (frame.left..frame.right).step_by(4) {
@@ -71,8 +64,90 @@ pub(super) fn recover(
             }
         }
     }
-    let (bucket, _) = colors.iter().enumerate().max_by_key(|(_, v)| *v)?;
-    let matte = [(bucket * 8 + 3) as u8; 3];
+    let (bucket, _) = colors.iter().enumerate().max_by_key(|(_, v)| *v).unwrap();
+    [(bucket * 8 + 3) as u8; 3]
+}
+
+fn populated(image: &Measurements, bounds: Bounds, matte: [u8; 3]) -> bool {
+    let Bounds {
+        left,
+        right,
+        top,
+        bottom,
+    } = bounds;
+    (0..5)
+        .flat_map(|y| (0..5).map(move |x| (x, y)))
+        .filter(|&(x, y)| {
+            color_gap(
+                image.at(
+                    left + (2 * x + 1) * (right - left) / 10,
+                    top + (2 * y + 1) * (bottom - top) / 10,
+                ),
+                matte,
+            ) > 12
+        })
+        .count()
+        >= 13
+}
+
+pub(super) fn hinted(
+    image: &Measurements,
+    frame: Bounds,
+    columns: usize,
+    rows: usize,
+) -> Option<Vec<Bounds>> {
+    if columns * rows < 2 {
+        return None;
+    }
+    let locate = |matte| {
+        let row_spans = spans(image, frame, true, matte);
+        let column_spans = spans(image, frame, false, matte);
+        if row_spans.len() != rows || column_spans.len() != columns {
+            return None;
+        }
+        populated_cells(image, row_spans, &column_spans, matte)
+    };
+    let neutral = neutral_matte(image, frame);
+    locate(neutral).or_else(|| {
+        super::feeds::feed_matte(image, frame)
+            .filter(|&matte| color_gap(neutral, matte) > 8)
+            .and_then(locate)
+    })
+}
+
+fn populated_cells(
+    image: &Measurements,
+    rows: Vec<(usize, usize)>,
+    columns: &[(usize, usize)],
+    matte: [u8; 3],
+) -> Option<Vec<Bounds>> {
+    let mut cells = Vec::with_capacity(columns.len() * rows.len());
+    for (top, bottom) in rows {
+        for &(left, right) in columns {
+            let bounds = Bounds {
+                left,
+                right,
+                top,
+                bottom,
+            };
+            if !populated(image, bounds, matte) {
+                return None;
+            }
+            cells.push(bounds);
+        }
+    }
+    Some(cells)
+}
+
+pub(super) fn recover(
+    image: &Measurements,
+    frame: Bounds,
+    regions: &[(Bounds, f32, bool)],
+) -> Option<Vec<Bounds>> {
+    if regions.len() < 8 {
+        return None;
+    }
+    let matte = neutral_matte(image, frame);
     let rows = spans(image, frame, true, matte);
     if rows.len() < 2 {
         return None;
@@ -104,40 +179,24 @@ pub(super) fn recover(
     if !has_chrome {
         return None;
     }
-    let mut tiles = Vec::with_capacity(count);
-    let mut supported = 0;
-    for (top, bottom) in rows {
-        for &(left, right) in &columns {
-            let occupied = (0..5)
-                .flat_map(|y| (0..5).map(move |x| (x, y)))
-                .filter(|&(x, y)| {
-                    color_gap(
-                        image.at(
-                            left + (2 * x + 1) * (right - left) / 10,
-                            top + (2 * y + 1) * (bottom - top) / 10,
-                        ),
-                        matte,
-                    ) > 12
-                })
-                .count();
-            if occupied < 13 {
-                return None;
-            }
-            let bounds = Bounds {
-                left,
-                right,
-                top,
-                bottom,
-            };
-            supported += usize::from(regions.iter().any(|(r, _, _)| {
-                let intersection = r.right.min(right).saturating_sub(r.left.max(left))
-                    * r.bottom.min(bottom).saturating_sub(r.top.max(top));
-                3 * intersection >= bounds.area() + r.area()
-            }));
-            tiles.push(bounds);
-        }
-    }
-    (supported * 2 >= count).then_some(tiles)
+    let cells = populated_cells(image, rows, &columns, matte)?;
+    let supported = cells
+        .iter()
+        .filter(|bounds| {
+            regions.iter().any(|(region, _, _)| {
+                let intersection = region
+                    .right
+                    .min(bounds.right)
+                    .saturating_sub(region.left.max(bounds.left))
+                    * region
+                        .bottom
+                        .min(bounds.bottom)
+                        .saturating_sub(region.top.max(bounds.top));
+                3 * intersection >= bounds.area() + region.area()
+            })
+        })
+        .count();
+    (supported * 2 >= count).then_some(cells)
 }
 
 // A colored avatar tile often shades the same hue across a smooth backdrop.

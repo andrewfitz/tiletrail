@@ -1,4 +1,5 @@
 mod evidence;
+pub(crate) mod journal;
 
 use crate::markers::hard_cut;
 use crate::vision::{Detection, Tile, appearance_distance};
@@ -12,7 +13,7 @@ const REVIEW_MATCH: i32 = 440;
 const AMBIGUITY_MARGIN: i32 = 45;
 const DORMANT_LIMIT: usize = 128;
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 struct Sample {
     appearance: AppearanceId,
     participant: Option<ParticipantId>,

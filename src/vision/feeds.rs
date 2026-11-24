@@ -6,7 +6,7 @@ use super::{
 };
 
 // Find a flat separator that crosses the image, including a colored one.
-fn feed_matte(image: &Measurements, frame: Bounds) -> Option<[u8; 3]> {
+pub(super) fn feed_matte(image: &Measurements, frame: Bounds) -> Option<[u8; 3]> {
     // The center pixel lets us check the candidate against the whole line
     // before walking a run of separator-colored lines.
     for horizontal in [true, false] {

@@ -2,6 +2,31 @@
 
 TileTrail detects and tracks rectangular video feeds in a single composited recording. It can analyze a camera multiview, follow tiles through a changing layout, or interpret a video call with participants and camera-off placeholders. Supply decoded frames on their original presentation clock. The result describes visible regions, changes in geometry and camera state, possible identities, and intervals of uncertain coverage.
 
+## Scan a recording
+
+Install the CLI with `cargo install --path .`. Put FFmpeg and ffprobe on
+PATH for scanning. Inspect reads existing JSON without opening its media.
+
+```sh
+tiletrail scan meeting.mp4 --gallery-grid 5x5 --output meeting.scan
+tiletrail inspect meeting.scan --at 00:03:07.2
+tiletrail inspect meeting.scan --issues
+tiletrail inspect meeting.scan --feed-id 12
+```
+
+The CLI uses the first video stream (excluding cover art), or the absolute
+stream index given by `--stream`. It analyzes every frame by default.
+Use `--sampling sparse` to analyze at half-second intervals, with inferred
+coverage between samples. For camera multiview use `--feed-layout auto` or
+a fixed grid such as `--feed-layout 3x2`. The gallery hint looks for matching
+gutters and falls back to meeting detection when it cannot find them.
+
+The scan records the input file's SHA-256, file stamp, stream, presentation
+origin, time base, duration, display transform and sampling. Its detector
+analysis uses time relative to the recording origin. MPCut can verify this
+provenance and import scans that match its source. The inspector also reads
+unwrapped Rust/C analysis JSON; its queries use the clock in that analysis.
+
 ## Analyze frames from Rust
 
 From a Rust application next to this checkout, run `cargo add tiletrail --path ../tiletrail --features gpu`. A consumer can also use a local directory extracted from the packaged `.crate` archive. Supply decoded frames through the Rust API below.
@@ -34,6 +59,7 @@ let analyzer = Analyzer::with_layout(AnalyzerConfig::default(), start, FeedLayou
 
 - **Automatic** infers rectangular feed boundaries from the picture. Use it for changing layouts, including asymmetric arrangements and bordered picture-in-picture. An inset has its own crop. The base region includes the inset as recorded. Each region has display-space bounds and appearance-based identity evidence. Inspect uncertain matches after a cut or rearrangement.
 - **Grid** takes a known number of equal columns and rows, for example `FeedLayout::Grid { columns: 2, rows: 2 }`. Each of up to 64 cells keeps its row-major display identity through black frames, duplicated images and cuts. A camera routed into a different cell takes that cell’s identity.
+- **Gallery** uses a hint such as `FeedLayout::Gallery { columns: 5, rows: 5 }` to locate a visible meeting gallery. The tracker follows content as it moves between cells. Its C entry point is `tiletrail_analyzer_create_gallery`.
 - **Meeting** adds participant-specific interpretation of galleries, screen shares and camera-off states. `Analyzer::new` continues to use this mode.
 
 Rust consumers can use `feed_tracks()`, `feed_appearances()`, and the `feed_id()` on a region. The version 1 interchange format uses the existing `participant_id` field for a feed identity. In C, call `tiletrail_analyzer_create_feeds` with zero columns and rows for automatic detection or positive dimensions for a grid.

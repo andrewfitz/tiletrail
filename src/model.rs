@@ -325,11 +325,13 @@ pub struct BackendDiagnostic {
 pub const MAX_GRID_FEEDS: u32 = 64;
 
 /// How the analyzer identifies regions in each frame.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum FeedLayout {
     /// Detect meeting layouts, including screen shares and camera-off tiles.
     #[default]
     Meeting,
+    /// Use visible gallery gutters to locate a grid, and track content across cells.
+    Gallery { columns: u32, rows: u32 },
     /// Detect feeds from visual boundaries and track their visual identities.
     Automatic,
     /// Divide the displayed frame into equal cells. Feed IDs are one-based

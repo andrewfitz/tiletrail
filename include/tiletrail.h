@@ -2,6 +2,7 @@
 #define TILETRAIL_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -12,6 +13,8 @@ extern "C" {
 #define TILETRAIL_HAS_PROGRESS 1
 #define TILETRAIL_HAS_COARSE_PUSH 1
 #define TILETRAIL_HAS_PREPARED_FRAMES 1
+#define TILETRAIL_HAS_CHECKPOINTS 1
+#define TILETRAIL_HAS_RESULT_CHUNKS 1
 /* Frames whose longer side is at most this many pixels are measured pixel for
  * pixel. A larger frame is point-sampled to that size: its longer side becomes
  * the limit, the other side scales to match rounded to nearest (at least one),
@@ -122,6 +125,17 @@ int32_t tiletrail_analyzer_create_feeds(const tiletrail_config_t *config,
                                        tiletrail_analyzer_t **out,
                                        tiletrail_error_t *error);
 
+#define TILETRAIL_HAS_GALLERY_HINT 1
+
+/* Detect meetings with a gallery hint of up to 64 cells in display orientation.
+ * Gallery identities follow content, including across cells. The hint applies
+ * only where the frame contains evidence for the gallery. */
+int32_t tiletrail_analyzer_create_gallery(const tiletrail_config_t *config,
+                                         tiletrail_timestamp_t start,
+                                         uint32_t columns, uint32_t rows,
+                                         tiletrail_analyzer_t **out,
+                                         tiletrail_error_t *error);
+
 /* Constant-time progress of committed input. Expected end is an optional
  * exclusive source timestamp. Percent is -1 when the duration is unknown.
  * A live scan reports 0..99; a successful complete result is the terminal step.
@@ -200,6 +214,36 @@ int32_t tiletrail_analyzer_result_json(const tiletrail_analyzer_t *analyzer,
                                       tiletrail_timestamp_t end,
                                       tiletrail_buffer_t *out,
                                       tiletrail_error_t *error);
+
+/* A zero cursor starts a journal. Advance the durable cursor only when the
+ * output chunk has been published. On resume, read chunks in journal order
+ * into a fresh analyzer with the same configuration. Callbacks may not
+ * re-enter the analyzer. Bytes are borrowed for each callback only.
+ */
+typedef struct {
+    size_t observations, events, coarse;
+} tiletrail_checkpoint_cursor_t;
+typedef int32_t (*tiletrail_checkpoint_writer_t)(void *context, const uint8_t *data, size_t size);
+typedef ptrdiff_t (*tiletrail_checkpoint_reader_t)(void *context, uint8_t *data, size_t capacity);
+int32_t tiletrail_analyzer_checkpoint_write(const tiletrail_analyzer_t *analyzer,
+                                           tiletrail_checkpoint_cursor_t *cursor,
+                                           tiletrail_checkpoint_writer_t writer,
+                                           void *context, tiletrail_error_t *error);
+int32_t tiletrail_analyzer_checkpoint_read(tiletrail_analyzer_t *analyzer,
+                                          tiletrail_checkpoint_cursor_t *cursor,
+                                          tiletrail_checkpoint_reader_t reader,
+                                          void *context, tiletrail_error_t *error);
+
+/* Kind 0 is a result envelope with empty arrays. Kinds 1–6 are JSON batches
+ * of observations, tracks, appearances, events, coverage and diagnostics.
+ * Return zero to accept a batch or nonzero to stop.
+ */
+typedef int32_t (*tiletrail_result_chunk_t)(void *context, uint32_t kind,
+                                           const uint8_t *data, size_t size);
+int32_t tiletrail_analyzer_result_chunks(const tiletrail_analyzer_t *analyzer,
+                                        tiletrail_timestamp_t end,
+                                        tiletrail_result_chunk_t chunk,
+                                        void *context, tiletrail_error_t *error);
 
 /* Query scene markers from a saved JSON result and a JSON marker rule.
  * The input buffers are borrowed until return. Output ownership and failure

@@ -12,6 +12,7 @@
 
 #![doc = include_str!("../README.md")]
 
+mod journal;
 mod ffi;
 mod gpu;
 mod markers;
@@ -84,7 +85,7 @@ impl Analyzer {
                 start,
             ));
         }
-        if let FeedLayout::Grid { columns, rows } = layout {
+        if let FeedLayout::Grid { columns, rows } | FeedLayout::Gallery { columns, rows } = layout {
             if !matches!(columns.checked_mul(rows), Some(1..=MAX_GRID_FEEDS)) {
                 return Err(error(
                     ErrorKind::InvalidRange,
@@ -247,6 +248,7 @@ impl Analyzer {
     fn detect(&self, measurements: &vision::Measurements) -> vision::Detection {
         match self.layout {
             FeedLayout::Meeting => vision::detect(measurements),
+            FeedLayout::Gallery { columns, rows } => vision::detect_gallery(measurements, columns, rows),
             FeedLayout::Automatic => vision::detect_feeds(measurements),
             FeedLayout::Grid { columns, rows } => vision::grid_feeds(measurements, columns, rows),
         }
@@ -275,7 +277,7 @@ impl Analyzer {
         let saved = coarse.then(|| self.tracker.checkpoint());
         let sparse = self.config.sampling == Sampling::Sparse;
         match self.layout {
-            FeedLayout::Meeting => {
+            FeedLayout::Meeting | FeedLayout::Gallery { .. } => {
                 self.tracker
                     .verify_thumbnail_subdivision(&measurements, &mut detection);
                 self.tracker

@@ -143,6 +143,10 @@ impl BackendSession {
         &self.diagnostics
     }
 
+    pub(crate) fn restore_diagnostics(&mut self, diagnostics: Vec<BackendDiagnostic>) {
+        self.diagnostics = diagnostics;
+    }
+
     /// Open the GPU under any mode, to exercise recovery from a lost device.
     #[cfg(all(test, feature = "gpu"))]
     fn gpu(mode: BackendMode, start: Timestamp) -> Self {

@@ -78,7 +78,7 @@ pub(crate) fn measure(frame: &Frame<'_>) -> Measurements {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub(crate) struct Tile {
     pub rect: Rect,
     pub kind: TileKind,
@@ -664,6 +664,33 @@ fn sort_tiles(tiles: &mut [Tile]) {
             .total_cmp(&b.rect.y)
             .then(a.rect.x.total_cmp(&b.rect.x))
     });
+}
+
+pub(crate) fn detect_gallery(image: &Measurements, columns: u32, rows: u32) -> Detection {
+    let (columns, rows) = match image.rotation {
+        Rotation::R0 | Rotation::R180 => (columns, rows),
+        Rotation::R90 | Rotation::R270 => (rows, columns),
+    };
+    let Some(cells) = gallery::hinted(image, frame_bounds(image), columns as usize, rows as usize) else {
+        return detect(image);
+    };
+    let confidence = 0.9;
+    let mut tiles = Vec::with_capacity(cells.len());
+    for bounds in cells {
+        let (descriptor, mut kind, _) = describe(image, bounds);
+        if kind == TileKind::Video && gallery::colored_card(image, bounds) {
+            kind = TileKind::CameraOff;
+        }
+        tiles.push(Tile {
+            rect: bounds.display_rect(image),
+            descriptor,
+            kind,
+            role: TileRole::Primary,
+            confidence,
+        });
+    }
+    sort_tiles(&mut tiles);
+    Detection { tiles, confidence }
 }
 
 pub(crate) fn detect(image: &Measurements) -> Detection {
